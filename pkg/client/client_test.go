@@ -50,7 +50,7 @@ func TestClient_Send_Success(t *testing.T) {
 		Title:   "Test Title",
 		Message: "Test Message",
 		Token:   "test-token",
-		ID:      "test-id",
+		// ID omitted - token and ID are mutually exclusive
 	}
 
 	err := client.Send(opts)
@@ -75,7 +75,7 @@ func TestClient_Send_WithAllOptions(t *testing.T) {
 		Title:     "Test Title",
 		Message:   "Test Message",
 		Token:     "test-token",
-		ID:        "test-id",
+		// ID omitted - token and ID are mutually exclusive
 		Type:      "alert",
 		Tags:      []string{"tag1", "tag2"},
 		ImageURL:  "https://example.com/image.png",
@@ -101,7 +101,6 @@ func TestClient_Send_ValidationErrors(t *testing.T) {
 			opts: &SendOptions{
 				Message: "Test",
 				Token:   "token",
-				ID:      "id",
 			},
 			wantErr: "title is required",
 		},
@@ -109,28 +108,27 @@ func TestClient_Send_ValidationErrors(t *testing.T) {
 			name: "missing message",
 			opts: &SendOptions{
 				Title: "Test",
-				Token: "token",
 				ID:    "id",
 			},
 			wantErr: "message is required",
 		},
 		{
-			name: "missing token",
+			name: "missing both token and id",
 			opts: &SendOptions{
 				Title:   "Test",
 				Message: "Test",
-				ID:      "id",
 			},
-			wantErr: "token is required",
+			wantErr: "either token or id is required",
 		},
 		{
-			name: "missing id",
+			name: "both token and id provided",
 			opts: &SendOptions{
 				Title:   "Test",
 				Message: "Test",
 				Token:   "token",
+				ID:      "id",
 			},
-			wantErr: "id is required",
+			wantErr: "token and id are mutually exclusive",
 		},
 	}
 
@@ -201,7 +199,7 @@ func TestClient_Send_HTTPErrors(t *testing.T) {
 				Title:   "Test",
 				Message: "Test",
 				Token:   "token",
-				ID:      "id",
+				// ID omitted - token and ID are mutually exclusive
 			}
 
 			err := client.Send(opts)
@@ -213,5 +211,46 @@ func TestClient_Send_HTTPErrors(t *testing.T) {
 				t.Errorf("expected error containing '%s', got: %v", tt.wantErr, err)
 			}
 		})
+	}
+}
+
+func TestClient_Send_WithEncryption(t *testing.T) {
+	// Track the request body to verify encryption occurred
+	var receivedBody string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Read and store the request body
+		buf := make([]byte, 1024)
+		n, _ := r.Body.Read(buf)
+		receivedBody = string(buf[:n])
+
+		w.WriteHeader(200)
+		w.Write([]byte(`{"status": "success"}`))
+	}))
+	defer server.Close()
+
+	client := New()
+	client.APIURL = server.URL
+
+	opts := &SendOptions{
+		Title:              "Test Title",
+		Message:            "Secret message",
+		Token:              "test-token",
+		EncryptionPassword: "test-password",
+	}
+
+	err := client.Send(opts)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	// Verify that the message was encrypted (not the original plaintext)
+	if strings.Contains(receivedBody, "Secret message") {
+		t.Error("expected message to be encrypted, but found plaintext in request body")
+	}
+
+	// Verify IV was sent
+	if !strings.Contains(receivedBody, "\"iv\":") {
+		t.Error("expected IV field in request body when encryption is enabled")
 	}
 }
