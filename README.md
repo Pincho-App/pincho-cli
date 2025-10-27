@@ -43,10 +43,14 @@ sudo mv wirepusher /usr/local/bin/
 ##  Quick Start
 
 1. **Get your credentials** from [WirePusher](https://wirepusher.com)
+   - You need EITHER a token OR a user ID (not both)
 
 2. **Configure once** (stores in `~/.wirepusher/config.yaml`):
    ```bash
+   # Option 1: Using token (recommended)
    wirepusher config set token YOUR_TOKEN
+
+   # Option 2: Using user ID
    wirepusher config set id YOUR_USER_ID
    ```
 
@@ -93,26 +97,45 @@ tail -f /var/log/app.log | grep ERROR | wirepusher send "Error Detected" --stdin
 
 ## Authentication
 
+**Important:** Authentication requires EITHER a token OR a user ID - not both. These credentials are mutually exclusive.
+
 Three methods (in priority order):
 
 ### 1. Command-Line Flags
 ```bash
-wirepusher send "Test" "Message" --token abc123 --id user123
+# Using token (recommended for most use cases)
+wirepusher send "Test" "Message" --token abc123
+
+# Using user ID (alternative)
+wirepusher send "Test" "Message" --id user123
 ```
 
 ### 2. Environment Variables
 ```bash
+# Using token
 export WIREPUSHER_TOKEN="your-token"
+wirepusher send "Test" "Message"
+
+# Using user ID
 export WIREPUSHER_ID="your-user-id"
 wirepusher send "Test" "Message"
 ```
 
 ### 3. Config File
 ```bash
+# Using token
 wirepusher config set token your-token
+wirepusher send "Test" "Message"
+
+# Using user ID
 wirepusher config set id your-user-id
 wirepusher send "Test" "Message"
 ```
+
+**Notes:**
+- Token is recommended for most use cases and team notifications
+- User ID is an alternative credential for individual users
+- If both are configured, the CLI will return an error
 
 ## Configuration Management
 
@@ -129,6 +152,68 @@ wirepusher config list
 ```
 
 Config is stored in `~/.wirepusher/config.yaml`.
+
+## Encryption
+
+The CLI supports AES-128-CBC encryption to secure notification messages before sending them to the API.
+
+### How It Works
+
+1. Message is encrypted client-side using AES-128-CBC
+2. Encryption key is derived from your password using SHA1
+3. A random initialization vector (IV) is generated for each message
+4. Only the **message** field is encrypted (title, type, tags, imageURL, actionURL remain unencrypted)
+5. WirePusher app decrypts the message using the matching password configured in your notification type
+
+### Basic Usage
+
+```bash
+wirepusher send "Secure Alert" "This message is encrypted" \
+  --encryption-password "your-secure-password" \
+  --type secure
+```
+
+### Configuration
+
+**In the WirePusher app:**
+1. Create or edit a notification type
+2. Enable encryption and set the same password
+3. Save the type configuration
+
+**In the CLI:**
+- Use `--encryption-password` flag when sending notifications
+- Password must match the type configuration in your app
+- Password is never sent to the API (only used for local encryption)
+
+### Important Notes
+
+- **Password matching required**: The encryption password MUST match the password configured for the notification type in your app
+- **Encryption scope**: Only the message body is encrypted; title, type, tags, images, and action URLs remain unencrypted for proper filtering and display
+- **Security**: Passwords are used only for client-side encryption and are never transmitted to the API
+- **Interoperability**: Encryption is compatible with all WirePusher SDKs (Python, JavaScript, Go, Java, C#, PHP, Rust)
+
+### Example Workflow
+
+```bash
+# 1. Send encrypted notification with type "secure"
+wirepusher send "Password Reset" "New password: xyz123" \
+  --type secure \
+  --encryption-password "my-secret-password"
+
+# 2. Send encrypted alert with tags
+wirepusher send "Database Alert" "Connection failed: timeout" \
+  --type alert \
+  --tag production \
+  --tag database \
+  --encryption-password "db-alert-password"
+
+# 3. Pipe encrypted output from command
+echo "Sensitive diagnostic info" | wirepusher send "Diagnostics" --stdin \
+  --type diagnostic \
+  --encryption-password "diagnostic-password"
+```
+
+See [examples/encryption.sh](examples/encryption.sh) for complete examples.
 
 ## CI/CD Integration
 
@@ -171,12 +256,14 @@ wirepusher send [title] [message] [flags]
 - `--tag strings` - Tags for categorization (repeatable)
 - `--image string` - Image URL to display
 - `--action string` - Action URL to open on tap
+- `--encryption-password string` - Password for AES-128-CBC encryption
 - `--stdin` - Read message from stdin
 
 **Examples:**
 ```bash
 wirepusher send "Title" "Message"
 wirepusher send "Error" "Details" --type alert --tag production
+wirepusher send "Secure" "Encrypted message" --encryption-password "secret"
 echo "Log output" | wirepusher send "Logs" --stdin
 ```
 

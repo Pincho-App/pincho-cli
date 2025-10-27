@@ -18,11 +18,11 @@ var sendCmd = &cobra.Command{
 	Long: `Send a push notification via WirePusher.
 
 The title and message can be provided as positional arguments or via flags.
-Authentication requires a token and user ID from flags, environment variables,
-or the config file.
+Authentication requires EITHER a token OR a user ID (not both) from flags,
+environment variables, or the config file.
 
 Examples:
-  # Simple notification
+  # Simple notification (using token)
   wirepusher send "Build Complete" "Deploy finished successfully"
 
   # With notification type
@@ -36,21 +36,31 @@ Examples:
     --image https://example.com/success.png \
     --action https://example.com/build/123
 
-  # Read message from stdin
-  echo "Server error detected" | wirepusher send "Error" --stdin
+  # With encryption (message encrypted with AES-128-CBC)
+  wirepusher send "Secure Alert" "Sensitive data here" \
+    --encryption-password "secret123" \
+    --type secure
 
-  # Override config with flags
-  wirepusher send "Test" "Message" --token abc123 --id user123
+  # Read message from stdin with encryption
+  echo "Confidential report" | wirepusher send "Report" --stdin \
+    --encryption-password "secret123"
+
+  # Using user ID instead of token
+  wirepusher send "Test" "Message" --id user123
+
+  # Override config with flags (token OR id, not both)
+  wirepusher send "Test" "Message" --token abc123
 `,
 	RunE: runSend,
 }
 
 var (
-	sendType      string
-	sendTags      []string
-	sendImageURL  string
-	sendActionURL string
-	sendStdin     bool
+	sendType               string
+	sendTags               []string
+	sendImageURL           string
+	sendActionURL          string
+	sendStdin              bool
+	sendEncryptionPassword string
 )
 
 func init() {
@@ -62,18 +72,21 @@ func init() {
 	sendCmd.Flags().StringVar(&sendImageURL, "image", "", "Image URL to display with notification")
 	sendCmd.Flags().StringVar(&sendActionURL, "action", "", "Action URL to open when notification is tapped")
 	sendCmd.Flags().BoolVar(&sendStdin, "stdin", false, "Read message from stdin")
+	sendCmd.Flags().StringVar(&sendEncryptionPassword, "encryption-password", "", "Password for AES-128-CBC encryption (must match type configuration in app)")
 }
 
 func runSend(cmd *cobra.Command, args []string) error {
 	// Get token and ID from flags, env vars, or config
-	token, err := getToken(cmd)
-	if err != nil {
-		return err
-	}
+	// Note: token and ID are mutually exclusive - only one should be provided
+	token := getTokenOptional(cmd)
+	id := getIDOptional(cmd)
 
-	id, err := getID(cmd)
-	if err != nil {
-		return err
+	// Validate that we have either token or ID, but not both
+	if token == "" && id == "" {
+		return fmt.Errorf("either token or id is required (use --token/WIREPUSHER_TOKEN or --id/WIREPUSHER_ID)")
+	}
+	if token != "" && id != "" {
+		return fmt.Errorf("token and id are mutually exclusive - use one or the other, not both")
 	}
 
 	// Parse title and message
@@ -86,14 +99,15 @@ func runSend(cmd *cobra.Command, args []string) error {
 	c := client.New()
 
 	opts := &client.SendOptions{
-		Title:     title,
-		Message:   message,
-		Token:     token,
-		ID:        id,
-		Type:      sendType,
-		Tags:      sendTags,
-		ImageURL:  sendImageURL,
-		ActionURL: sendActionURL,
+		Title:              title,
+		Message:            message,
+		Token:              token,
+		ID:                 id,
+		Type:               sendType,
+		Tags:               sendTags,
+		ImageURL:           sendImageURL,
+		ActionURL:          sendActionURL,
+		EncryptionPassword: sendEncryptionPassword,
 	}
 
 	if err := c.Send(opts); err != nil {
@@ -105,50 +119,44 @@ func runSend(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// getToken retrieves the token from flags, env vars, or config (in that order)
-func getToken(cmd *cobra.Command) (string, error) {
+// getTokenOptional retrieves the token from flags, env vars, or config (in that order)
+// Returns empty string if not found (caller should validate)
+func getTokenOptional(cmd *cobra.Command) string {
 	// Try flag first
 	token, _ := cmd.Flags().GetString("token")
 	if token != "" {
-		return token, nil
+		return token
 	}
 
 	// Try environment variable
 	token = os.Getenv("WIREPUSHER_TOKEN")
 	if token != "" {
-		return token, nil
+		return token
 	}
 
 	// Try config file
 	token = viper.GetString("token")
-	if token != "" {
-		return token, nil
-	}
-
-	return "", fmt.Errorf("token is required (use --token, WIREPUSHER_TOKEN env var, or 'wirepusher config set token <value>')")
+	return token
 }
 
-// getID retrieves the user ID from flags, env vars, or config (in that order)
-func getID(cmd *cobra.Command) (string, error) {
+// getIDOptional retrieves the user ID from flags, env vars, or config (in that order)
+// Returns empty string if not found (caller should validate)
+func getIDOptional(cmd *cobra.Command) string {
 	// Try flag first
 	id, _ := cmd.Flags().GetString("id")
 	if id != "" {
-		return id, nil
+		return id
 	}
 
 	// Try environment variable
 	id = os.Getenv("WIREPUSHER_ID")
 	if id != "" {
-		return id, nil
+		return id
 	}
 
 	// Try config file
 	id = viper.GetString("id")
-	if id != "" {
-		return id, nil
-	}
-
-	return "", fmt.Errorf("id is required (use --id, WIREPUSHER_ID env var, or 'wirepusher config set id <value>')")
+	return id
 }
 
 // parseTitleAndMessage extracts title and message from args or stdin

@@ -7,17 +7,23 @@ This directory contains example scripts demonstrating various use cases for the 
 Before running these examples, you need:
 
 1. WirePusher CLI installed
-2. API credentials (token and user ID) from your WirePusher account
+2. API credentials from your WirePusher account (EITHER token OR user ID - not both)
 
 Set up your credentials:
 ```bash
+# Option 1: Using token (recommended)
 wirepusher config set token YOUR_TOKEN
+
+# Option 2: Using user ID (alternative)
 wirepusher config set id YOUR_USER_ID
 ```
 
 Or use environment variables:
 ```bash
+# Using token
 export WIREPUSHER_TOKEN="your-token"
+
+# Using user ID
 export WIREPUSHER_ID="your-user-id"
 ```
 
@@ -72,6 +78,25 @@ chmod +x examples/config-example.sh
 ./examples/config-example.sh
 ```
 
+### [encryption.sh](encryption.sh)
+End-to-end encryption examples showing:
+- Basic encrypted notifications with AES-128-CBC
+- Encrypted notifications with tags, images, and action URLs
+- Piping sensitive data with encryption
+- Using environment variables for passwords
+- Batch sending with encryption
+
+**Prerequisites for encryption:**
+1. Create notification types in WirePusher app with encryption enabled
+2. Set the same password in the app as used in the examples
+
+```bash
+chmod +x examples/encryption.sh
+./examples/encryption.sh
+```
+
+**Important:** Only the message body is encrypted; title, type, tags, images, and action URLs remain unencrypted for proper filtering and display.
+
 ## Common Patterns
 
 ### Notify on script completion
@@ -95,23 +120,37 @@ df -h | wirepusher send "Disk Usage" --stdin
 
 ## Authentication Methods
 
+**Important:** Use EITHER token OR user ID - not both. These credentials are mutually exclusive.
+
 The CLI supports three authentication methods (in priority order):
 
 1. **Command-line flags** (highest priority)
    ```bash
-   wirepusher send "Title" "Message" --token abc --id xyz
+   # Using token (recommended)
+   wirepusher send "Title" "Message" --token abc123
+
+   # Using user ID (alternative)
+   wirepusher send "Title" "Message" --id user123
    ```
 
 2. **Environment variables**
    ```bash
+   # Using token
    export WIREPUSHER_TOKEN="your-token"
+   wirepusher send "Title" "Message"
+
+   # Using user ID
    export WIREPUSHER_ID="your-user-id"
    wirepusher send "Title" "Message"
    ```
 
 3. **Config file** (lowest priority)
    ```bash
+   # Using token
    wirepusher config set token your-token
+   wirepusher send "Title" "Message"
+
+   # Using user ID
    wirepusher config set id your-user-id
    wirepusher send "Title" "Message"
    ```

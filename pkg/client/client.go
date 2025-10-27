@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"gitlab.com/wirepusher/cli/pkg/crypto"
 )
 
 const (
@@ -25,14 +27,16 @@ type Client struct {
 
 // SendOptions contains parameters for sending a notification
 type SendOptions struct {
-	Title     string   `json:"title"`
-	Message   string   `json:"message"`
-	Token     string   `json:"token"`
-	ID        string   `json:"id"`
-	Type      string   `json:"type,omitempty"`
-	Tags      []string `json:"tags,omitempty"`
-	ImageURL  string   `json:"imageURL,omitempty"`
-	ActionURL string   `json:"actionURL,omitempty"`
+	Title              string   `json:"title"`
+	Message            string   `json:"message"`
+	Token              string   `json:"token,omitempty"`
+	ID                 string   `json:"id,omitempty"`
+	Type               string   `json:"type,omitempty"`
+	Tags               []string `json:"tags,omitempty"`
+	ImageURL           string   `json:"imageURL,omitempty"`
+	ActionURL          string   `json:"actionURL,omitempty"`
+	IV                 string   `json:"iv,omitempty"`
+	EncryptionPassword string   `json:"-"` // Not sent to API, used for local encryption
 }
 
 // SendResponse represents the API response
@@ -60,15 +64,42 @@ func (c *Client) Send(opts *SendOptions) error {
 	if opts.Message == "" {
 		return fmt.Errorf("message is required")
 	}
-	if opts.Token == "" {
-		return fmt.Errorf("token is required")
+
+	// Validate token and ID are mutually exclusive
+	if opts.Token == "" && opts.ID == "" {
+		return fmt.Errorf("either token or id is required")
 	}
-	if opts.ID == "" {
-		return fmt.Errorf("id is required")
+	if opts.Token != "" && opts.ID != "" {
+		return fmt.Errorf("token and id are mutually exclusive - use one or the other, not both")
 	}
 
+	// Handle encryption if password provided
+	finalMessage := opts.Message
+	var ivHex string
+
+	if opts.EncryptionPassword != "" {
+		ivBytes, ivHexStr, err := crypto.GenerateIV()
+		if err != nil {
+			return fmt.Errorf("failed to generate IV: %w", err)
+		}
+
+		encrypted, err := crypto.EncryptMessage(opts.Message, opts.EncryptionPassword, ivBytes)
+		if err != nil {
+			return fmt.Errorf("failed to encrypt message: %w", err)
+		}
+
+		finalMessage = encrypted
+		ivHex = ivHexStr
+	}
+
+	// Build request with encrypted message if applicable
+	requestOpts := *opts
+	requestOpts.Message = finalMessage
+	requestOpts.IV = ivHex
+	requestOpts.EncryptionPassword = "" // Don't send password to API
+
 	// Build request body
-	jsonData, err := json.Marshal(opts)
+	jsonData, err := json.Marshal(requestOpts)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
