@@ -97,45 +97,66 @@ tail -f /var/log/app.log | grep ERROR | wirepusher send "Error Detected" --stdin
 
 ## Authentication
 
-**Important:** Authentication requires EITHER a token OR a user ID - not both. These credentials are mutually exclusive.
+WirePusher supports two authentication methods for sending notifications. **Important:** These are mutually exclusive - use EITHER token OR ID, not both.
 
-Three methods (in priority order):
+### Team Token (Recommended for Teams)
 
-### 1. Command-Line Flags
+Team tokens (starting with `wpt_`) send notifications to **ALL members** of a team.
+
+**Use cases:**
+- Team-wide alerts and announcements
+- Shared project notifications
+- CI/CD pipelines broadcasting to teams
+- Collaborative workflows
+
+**Methods:**
+
 ```bash
-# Using token (recommended for most use cases)
-wirepusher send "Test" "Message" --token abc123
+# 1. Command-line flag
+wirepusher send "Team Alert" "Server maintenance in 1 hour" --token wpt_abc123xyz
 
-# Using user ID (alternative)
-wirepusher send "Test" "Message" --id user123
+# 2. Environment variable
+export WIREPUSHER_TOKEN="wpt_abc123xyz"
+wirepusher send "Team Alert" "Server maintenance in 1 hour"
+
+# 3. Config file (stores in ~/.wirepusher/config.yaml)
+wirepusher config set token wpt_abc123xyz
+wirepusher send "Team Alert" "Server maintenance in 1 hour"
 ```
 
-### 2. Environment Variables
-```bash
-# Using token
-export WIREPUSHER_TOKEN="your-token"
-wirepusher send "Test" "Message"
+### User ID (Personal Notifications)
 
-# Using user ID
-export WIREPUSHER_ID="your-user-id"
-wirepusher send "Test" "Message"
+User IDs send notifications to a **specific user's devices only**.
+
+**Use cases:**
+- Personal notifications
+- User-specific alerts
+- Individual reminders
+- Single-user automation
+
+**Methods:**
+
+```bash
+# 1. Command-line flag
+wirepusher send "Personal Reminder" "Your task is due tomorrow" --id user_abc123
+
+# 2. Environment variable
+export WIREPUSHER_ID="user_abc123"
+wirepusher send "Personal Reminder" "Your task is due tomorrow"
+
+# 3. Config file (stores in ~/.wirepusher/config.yaml)
+wirepusher config set id user_abc123
+wirepusher send "Personal Reminder" "Your task is due tomorrow"
 ```
 
-### 3. Config File
-```bash
-# Using token
-wirepusher config set token your-token
-wirepusher send "Test" "Message"
+### Priority Order
 
-# Using user ID
-wirepusher config set id your-user-id
-wirepusher send "Test" "Message"
-```
+If credentials are set in multiple places, the CLI uses this priority order:
+1. Command-line flags (`--token` or `--id`)
+2. Environment variables (`WIREPUSHER_TOKEN` or `WIREPUSHER_ID`)
+3. Config file (`~/.wirepusher/config.yaml`)
 
-**Notes:**
-- Token is recommended for most use cases and team notifications
-- User ID is an alternative credential for individual users
-- If both are configured, the CLI will return an error
+**Important:** If both token and ID are configured, the CLI will return an error.
 
 ## Configuration Management
 
