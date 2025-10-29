@@ -1,6 +1,6 @@
 # WirePusher CLI
 
-Official command-line tool for [WirePusher](https://wirepusher.com) push notifications.
+Official command-line tool for [WirePusher](https://wirepusher.dev) push notifications.
 
 Send push notifications from your terminal, CI/CD pipelines, monitoring scripts, and automation workflows with a single command.
 
@@ -42,199 +42,107 @@ sudo mv wirepusher /usr/local/bin/
 
 ##  Quick Start
 
-1. **Get your credentials** from [WirePusher](https://wirepusher.com)
-   - You need EITHER a token OR a user ID (not both)
+**1. Get your token:** Open app → Settings → Help → copy token
 
-2. **Configure once** (stores in `~/.wirepusher/config.yaml`):
-   ```bash
-   # Option 1: Using token (recommended)
-   wirepusher config set token YOUR_TOKEN
+**2. Configure once** (stores in `~/.wirepusher/config.yaml`):
+```bash
+wirepusher config set token YOUR_TOKEN
+```
 
-   # Option 2: Using user ID
-   wirepusher config set id YOUR_USER_ID
-   ```
-
-3. **Send a notification**:
-   ```bash
-   wirepusher send "Hello" "Your first notification!"
-   ```
+**3. Send a notification**:
+```bash
+wirepusher send "Deploy Complete" "Version 1.2.3 deployed to production"
+```
 
 ## Usage
 
 ### Basic Send
 
 ```bash
-wirepusher send "Build Complete" "Deployment finished successfully"
+wirepusher send "Deploy Complete" "Version 1.2.3 deployed to production"
 ```
 
 ### With Type and Tags
 
 ```bash
-wirepusher send "Alert" "CPU usage high" \
-  --type alert \
+wirepusher send "Deploy Complete" "Version 1.2.3 deployed to production" \
+  --type deployment \
   --tag production \
-  --tag monitoring
+  --tag backend
 ```
 
 ### With Image and Action URL
 
 ```bash
-wirepusher send "Deploy Complete" "v1.2.3 deployed" \
-  --type success \
-  --image https://example.com/success.png \
-  --action https://example.com/deploy/123
+wirepusher send "Deploy Complete" "Version 1.2.3 deployed to production" \
+  --type deployment \
+  --image https://cdn.example.com/success.png \
+  --action https://dash.example.com/deploy/123
 ```
 
 ### Read from Stdin
 
 ```bash
 # Pipe command output
-echo "Server error detected" | wirepusher send "Error" --stdin
+echo "Build successful" | wirepusher send "Build Status" --stdin
 
 # Monitor logs
 tail -f /var/log/app.log | grep ERROR | wirepusher send "Error Detected" --stdin
 ```
 
-## Authentication
+### Authentication Methods
 
-WirePusher supports two authentication methods for sending notifications. **Important:** These are mutually exclusive - use EITHER token OR ID, not both.
-
-### Team Token (Recommended for Teams)
-
-Team tokens (starting with `wpt_`) send notifications to **ALL members** of a team.
-
-**Use cases:**
-- Team-wide alerts and announcements
-- Shared project notifications
-- CI/CD pipelines broadcasting to teams
-- Collaborative workflows
-
-**Methods:**
+The CLI supports three ways to provide your token (priority order):
 
 ```bash
 # 1. Command-line flag
-wirepusher send "Team Alert" "Server maintenance in 1 hour" --token wpt_abc123xyz
+wirepusher send "Deploy Complete" "Version 1.2.3 deployed" --token wpu_abc123xyz
 
 # 2. Environment variable
-export WIREPUSHER_TOKEN="wpt_abc123xyz"
-wirepusher send "Team Alert" "Server maintenance in 1 hour"
+export WIREPUSHER_TOKEN="wpu_abc123xyz"
+wirepusher send "Deploy Complete" "Version 1.2.3 deployed"
 
-# 3. Config file (stores in ~/.wirepusher/config.yaml)
-wirepusher config set token wpt_abc123xyz
-wirepusher send "Team Alert" "Server maintenance in 1 hour"
-```
-
-### User ID (Personal Notifications)
-
-User IDs send notifications to a **specific user's devices only**.
-
-**Use cases:**
-- Personal notifications
-- User-specific alerts
-- Individual reminders
-- Single-user automation
-
-**Methods:**
-
-```bash
-# 1. Command-line flag
-wirepusher send "Personal Reminder" "Your task is due tomorrow" --id user_abc123
-
-# 2. Environment variable
-export WIREPUSHER_ID="user_abc123"
-wirepusher send "Personal Reminder" "Your task is due tomorrow"
-
-# 3. Config file (stores in ~/.wirepusher/config.yaml)
-wirepusher config set id user_abc123
-wirepusher send "Personal Reminder" "Your task is due tomorrow"
-```
-
-### Priority Order
-
-If credentials are set in multiple places, the CLI uses this priority order:
-1. Command-line flags (`--token` or `--id`)
-2. Environment variables (`WIREPUSHER_TOKEN` or `WIREPUSHER_ID`)
-3. Config file (`~/.wirepusher/config.yaml`)
-
-**Important:** If both token and ID are configured, the CLI will return an error.
-
-## Configuration Management
-
-```bash
-# Set values
-wirepusher config set token wpt_abc123xyz
-wirepusher config set id user-id-here
-
-# Get specific value
-wirepusher config get token
-
-# List all configuration
-wirepusher config list
+# 3. Config file (set once, use everywhere)
+wirepusher config set token wpu_abc123xyz
+wirepusher send "Deploy Complete" "Version 1.2.3 deployed"
 ```
 
 Config is stored in `~/.wirepusher/config.yaml`.
 
 ## Encryption
 
-The CLI supports AES-128-CBC encryption to secure notification messages before sending them to the API.
+The CLI supports AES-128-CBC encryption to secure notification messages. Only the `message` field is encrypted—`title`, `type`, `tags`, `image`, and `action` remain unencrypted for filtering and display.
 
-### How It Works
-
-1. Message is encrypted client-side using AES-128-CBC
-2. Encryption key is derived from your password using SHA1
-3. A random initialization vector (IV) is generated for each message
-4. Only the **message** field is encrypted (title, type, tags, imageURL, actionURL remain unencrypted)
-5. WirePusher app decrypts the message using the matching password configured in your notification type
-
-### Basic Usage
-
-```bash
-wirepusher send "Secure Alert" "This message is encrypted" \
-  --encryption-password "your-secure-password" \
-  --type secure
-```
-
-### Configuration
+### Setup
 
 **In the WirePusher app:**
 1. Create or edit a notification type
-2. Enable encryption and set the same password
+2. Enable encryption and set a password
 3. Save the type configuration
 
 **In the CLI:**
-- Use `--encryption-password` flag when sending notifications
-- Password must match the type configuration in your app
-- Password is never sent to the API (only used for local encryption)
+```bash
+wirepusher send "Security Alert" "Unauthorized access detected" \
+  --type security \
+  --encryption-password "your-secure-password"
+```
 
 ### Important Notes
 
-- **Password matching required**: The encryption password MUST match the password configured for the notification type in your app
-- **Encryption scope**: Only the message body is encrypted; title, type, tags, images, and action URLs remain unencrypted for proper filtering and display
-- **Security**: Passwords are used only for client-side encryption and are never transmitted to the API
-- **Interoperability**: Encryption is compatible with all WirePusher SDKs (Python, JavaScript, Go, Java, C#, PHP, Rust)
+- **Password matching required**: Encryption password MUST match the type configuration in your app
+- **Encryption scope**: Only message body is encrypted
+- **Security**: Passwords used for client-side encryption only, never transmitted
+- **Interoperability**: Compatible with all WirePusher SDKs
 
-### Example Workflow
+### Example
 
 ```bash
-# 1. Send encrypted notification with type "secure"
-wirepusher send "Password Reset" "New password: xyz123" \
-  --type secure \
-  --encryption-password "my-secret-password"
-
-# 2. Send encrypted alert with tags
 wirepusher send "Database Alert" "Connection failed: timeout" \
   --type alert \
   --tag production \
   --tag database \
   --encryption-password "db-alert-password"
-
-# 3. Pipe encrypted output from command
-echo "Sensitive diagnostic info" | wirepusher send "Diagnostics" --stdin \
-  --type diagnostic \
-  --encryption-password "diagnostic-password"
 ```
-
-See [examples/encryption.sh](examples/encryption.sh) for complete examples.
 
 ## CI/CD Integration
 
@@ -244,10 +152,9 @@ See [examples/encryption.sh](examples/encryption.sh) for complete examples.
 deploy:
   script:
     - echo "Deploying..."
-    - wirepusher send "Deploy Complete" "v${CI_COMMIT_TAG} deployed"
+    - wirepusher send "Deploy Complete" "Version ${CI_COMMIT_TAG} deployed to production"
   variables:
     WIREPUSHER_TOKEN: $WIREPUSHER_TOKEN
-    WIREPUSHER_ID: $WIREPUSHER_ID
 ```
 
 ### GitHub Actions
@@ -255,11 +162,10 @@ deploy:
 ```yaml
 - name: Notify on success
   run: |
-    wirepusher send "Build Passed" "Commit ${{ github.sha }} succeeded" \
-      --type success
+    wirepusher send "Deploy Complete" "Commit ${{ github.sha }} deployed to production" \
+      --type deployment
   env:
     WIREPUSHER_TOKEN: ${{ secrets.WIREPUSHER_TOKEN }}
-    WIREPUSHER_ID: ${{ secrets.WIREPUSHER_ID }}
 ```
 
 ## Commands
@@ -273,7 +179,8 @@ wirepusher send [title] [message] [flags]
 ```
 
 **Flags:**
-- `--type string` - Notification type (alert, info, success, etc.)
+- `--token string` - WirePusher token (or use env var/config)
+- `--type string` - Notification type (deployment, alert, info, etc.)
 - `--tag strings` - Tags for categorization (repeatable)
 - `--image string` - Image URL to display
 - `--action string` - Action URL to open on tap
@@ -282,8 +189,8 @@ wirepusher send [title] [message] [flags]
 
 **Examples:**
 ```bash
-wirepusher send "Title" "Message"
-wirepusher send "Error" "Details" --type alert --tag production
+wirepusher send "Deploy Complete" "Version 1.2.3 deployed"
+wirepusher send "Alert" "CPU usage high" --type alert --tag production
 wirepusher send "Secure" "Encrypted message" --encryption-password "secret"
 echo "Log output" | wirepusher send "Logs" --stdin
 ```
@@ -299,8 +206,7 @@ wirepusher config list
 ```
 
 **Supported keys:**
-- `token` - Your WirePusher API token
-- `id` - Your WirePusher user ID
+- `token` - Your WirePusher token
 
 ### version
 
@@ -309,14 +215,6 @@ Print version information.
 ```bash
 wirepusher version
 ```
-
-## Examples
-
-See [examples/](examples/) directory for:
-- [Simple notifications](examples/simple.sh)
-- [CI/CD integration](examples/ci-cd.sh)
-- [Log monitoring](examples/log-monitoring.sh)
-- [Configuration management](examples/config-example.sh)
 
 ## Building
 
@@ -352,28 +250,13 @@ go test ./... -cover
 go test ./... -v
 ```
 
-## Contributing
+## Links
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
-
-## Security
-
-For security vulnerabilities, email security@wirepusher.com. See [SECURITY.md](SECURITY.md) for details.
+- **Documentation**: https://wirepusher.dev/help
+- **Repository**: https://gitlab.com/wirepusher/cli
+- **Issues**: https://gitlab.com/wirepusher/cli/-/issues
+- **Releases**: https://gitlab.com/wirepusher/cli/-/releases
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-## Support
-
-- **Documentation:** https://wirepusher.com/docs
-- **Issues:** https://gitlab.com/wirepusher/cli/-/issues
-- **Email:** support@wirepusher.com
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history.
-
----
-
-Made with ❤️ by the WirePusher team
