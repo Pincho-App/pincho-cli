@@ -30,7 +30,7 @@ type SendOptions struct {
 	Title              string   `json:"title"`
 	Message            string   `json:"message"`
 	Token              string   `json:"token,omitempty"`
-	ID                 string   `json:"id,omitempty"`
+	ID                 string   `json:"id,omitempty"` // Deprecated: Legacy authentication. Use Token instead.
 	Type               string   `json:"type,omitempty"`
 	Tags               []string `json:"tags,omitempty"`
 	ImageURL           string   `json:"imageURL,omitempty"`

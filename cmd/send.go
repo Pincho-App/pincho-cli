@@ -89,6 +89,11 @@ func runSend(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("token and id are mutually exclusive - use one or the other, not both")
 	}
 
+	// Print deprecation warning if using ID
+	if id != "" {
+		fmt.Fprintln(os.Stderr, "Warning: The --id flag is deprecated and will be removed in v2.0.0. Please use --token instead.")
+	}
+
 	// Parse title and message
 	title, message, err := parseTitleAndMessage(cmd, args)
 	if err != nil {
@@ -141,6 +146,7 @@ func getTokenOptional(cmd *cobra.Command) string {
 
 // getIDOptional retrieves the user ID from flags, env vars, or config (in that order)
 // Returns empty string if not found (caller should validate)
+// Deprecated: Legacy authentication. Use getTokenOptional instead.
 func getIDOptional(cmd *cobra.Command) string {
 	// Try flag first
 	id, _ := cmd.Flags().GetString("id")

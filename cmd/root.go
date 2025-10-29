@@ -42,7 +42,8 @@ func init() {
 
 	// Global flags
 	rootCmd.PersistentFlags().StringP("token", "t", "", "WirePusher API token (env: WIREPUSHER_TOKEN)")
-	rootCmd.PersistentFlags().StringP("id", "i", "", "WirePusher user ID (env: WIREPUSHER_ID)")
+	// Deprecated: Legacy authentication. Use --token flag instead.
+	rootCmd.PersistentFlags().StringP("id", "i", "", "[DEPRECATED] WirePusher user ID - use --token instead (env: WIREPUSHER_ID)")
 	rootCmd.PersistentFlags().Bool("verbose", false, "Enable verbose output")
 }
 
