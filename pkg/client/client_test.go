@@ -50,12 +50,17 @@ func TestClient_Send_Success(t *testing.T) {
 		Title:   "Test Title",
 		Message: "Test Message",
 		Token:   "test-token",
-		// ID omitted - token and ID are mutually exclusive
 	}
 
-	err := client.Send(opts)
+	result, err := client.Send(opts)
 	if err != nil {
 		t.Errorf("expected no error, got: %v", err)
+	}
+	if result == nil {
+		t.Error("expected result, got nil")
+	}
+	if result.Response == nil {
+		t.Error("expected response, got nil")
 	}
 }
 
@@ -72,19 +77,22 @@ func TestClient_Send_WithAllOptions(t *testing.T) {
 	client.APIURL = server.URL
 
 	opts := &SendOptions{
-		Title:     "Test Title",
-		Message:   "Test Message",
-		Token:     "test-token",
-		// ID omitted - token and ID are mutually exclusive
+		Title:   "Test Title",
+		Message: "Test Message",
+		Token:   "test-token",
+
 		Type:      "alert",
 		Tags:      []string{"tag1", "tag2"},
 		ImageURL:  "https://example.com/image.png",
 		ActionURL: "https://example.com/action",
 	}
 
-	err := client.Send(opts)
+	result, err := client.Send(opts)
 	if err != nil {
 		t.Errorf("expected no error, got: %v", err)
+	}
+	if result == nil {
+		t.Error("expected result, got nil")
 	}
 }
 
@@ -105,38 +113,50 @@ func TestClient_Send_ValidationErrors(t *testing.T) {
 			wantErr: "title is required",
 		},
 		{
-			name: "missing message",
+			name: "missing token",
+			opts: &SendOptions{
+				Title:   "Test",
+				Message: "Test",
+			},
+			wantErr: "token is required",
+		},
+		{
+			name: "invalid tags - too many",
 			opts: &SendOptions{
 				Title: "Test",
-				ID:    "id",
+				Token: "token",
+				Tags:  []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"},
 			},
-			wantErr: "message is required",
+			wantErr: "maximum of 10 tags allowed",
 		},
 		{
-			name: "missing both token and id",
+			name: "invalid tags - too long",
 			opts: &SendOptions{
-				Title:   "Test",
-				Message: "Test",
+				Title: "Test",
+				Token: "token",
+				Tags:  []string{"this-is-a-very-long-tag-name-that-exceeds-the-fifty-character-limit-by-far"},
 			},
-			wantErr: "either token or id is required",
+			wantErr: "exceeds maximum length of 50 characters",
 		},
 		{
-			name: "both token and id provided",
+			name: "invalid tags - invalid characters",
 			opts: &SendOptions{
-				Title:   "Test",
-				Message: "Test",
-				Token:   "token",
-				ID:      "id",
+				Title: "Test",
+				Token: "token",
+				Tags:  []string{"invalid tag with spaces"},
 			},
-			wantErr: "token and id are mutually exclusive",
+			wantErr: "contains invalid characters",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := client.Send(tt.opts)
+			result, err := client.Send(tt.opts)
 			if err == nil {
 				t.Error("expected error, got nil")
+			}
+			if result != nil {
+				t.Error("expected nil result on error, got result")
 			}
 			if !strings.Contains(err.Error(), tt.wantErr) {
 				t.Errorf("expected error containing '%s', got: %v", tt.wantErr, err)
@@ -199,12 +219,14 @@ func TestClient_Send_HTTPErrors(t *testing.T) {
 				Title:   "Test",
 				Message: "Test",
 				Token:   "token",
-				// ID omitted - token and ID are mutually exclusive
 			}
 
-			err := client.Send(opts)
+			result, err := client.Send(opts)
 			if err == nil {
 				t.Fatal("expected error, got nil")
+			}
+			if result != nil {
+				t.Error("expected nil result on error, got result")
 			}
 
 			if !strings.Contains(err.Error(), tt.wantErr) {
@@ -239,9 +261,12 @@ func TestClient_Send_WithEncryption(t *testing.T) {
 		EncryptionPassword: "test-password",
 	}
 
-	err := client.Send(opts)
+	result, err := client.Send(opts)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected result, got nil")
 	}
 
 	// Verify that the message was encrypted (not the original plaintext)

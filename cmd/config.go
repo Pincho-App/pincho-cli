@@ -17,14 +17,13 @@ Configuration is stored in ~/.wirepusher/config.yaml and can be set, retrieved,
 or listed using the subcommands.
 
 Priority order for configuration values:
-  1. Command-line flags (--token, --id)
-  2. Environment variables (WIREPUSHER_TOKEN, WIREPUSHER_ID)
+  1. Command-line flags (--token)
+  2. Environment variables (WIREPUSHER_TOKEN)
   3. Config file (~/.wirepusher/config.yaml)
 
 Examples:
   # Set configuration values
   wirepusher config set token wpt_abc123xyz
-  wirepusher config set id user-id-here
 
   # Get a specific value
   wirepusher config get token
@@ -42,11 +41,9 @@ var configSetCmd = &cobra.Command{
 
 Supported keys:
   - token: Your WirePusher API token
-  - id: Your WirePusher user ID
 
 Example:
   wirepusher config set token wpt_abc123xyz
-  wirepusher config set id user-id-here
 `,
 	Args: cobra.ExactArgs(2),
 	RunE: runConfigSet,
@@ -60,7 +57,6 @@ var configGetCmd = &cobra.Command{
 
 Example:
   wirepusher config get token
-  wirepusher config get id
 `,
 	Args: cobra.ExactArgs(1),
 	RunE: runConfigGet,
@@ -90,8 +86,8 @@ func runConfigSet(cmd *cobra.Command, args []string) error {
 	value := args[1]
 
 	// Validate key
-	if key != "token" && key != "id" {
-		return fmt.Errorf("invalid key '%s' (supported: token, id)", key)
+	if key != "token" {
+		return fmt.Errorf("invalid key '%s' (supported: token)", key)
 	}
 
 	if err := config.Set(key, value); err != nil {
@@ -135,7 +131,6 @@ func runConfigList(cmd *cobra.Command, args []string) error {
 		fmt.Println("No configuration set")
 		fmt.Println("\nTo get started:")
 		fmt.Println("  wirepusher config set token YOUR_TOKEN")
-		fmt.Println("  wirepusher config set id YOUR_ID")
 		return nil
 	}
 

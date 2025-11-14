@@ -2,33 +2,38 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"gitlab.com/wirepusher/cli/pkg/client"
+	clierrors "gitlab.com/wirepusher/cli/pkg/errors"
+	"gitlab.com/wirepusher/cli/pkg/logging"
 )
 
 // sendCmd represents the send command
 var sendCmd = &cobra.Command{
-	Use:   "send [title] [message]",
+	Use:   "send <title> [message]",
 	Short: "Send a push notification",
 	Long: `Send a push notification via WirePusher.
 
-The title and message can be provided as positional arguments or via flags.
-Authentication requires EITHER a token OR a user ID (not both) from flags,
+The title is required, and message is optional.
+Authentication requires a token from flags,
 environment variables, or the config file.
 
 Examples:
   # Simple notification (using token)
   wirepusher send "Build Complete" "Deploy finished successfully"
 
+  # Title-only notification (message is optional)
+  wirepusher send "Deploy Complete"
+
   # With notification type
   wirepusher send "Alert" "CPU usage high" --type alert
 
-  # With tags
+  # With tags (normalized to lowercase, max 10 tags, 50 chars each)
   wirepusher send "Deploy" "v1.2.3 deployed" --tag production --tag release
 
   # With image and action URL
@@ -45,10 +50,8 @@ Examples:
   echo "Confidential report" | wirepusher send "Report" --stdin \
     --encryption-password "secret123"
 
-  # Using user ID instead of token
-  wirepusher send "Test" "Message" --id user123
 
-  # Override config with flags (token OR id, not both)
+  # Override config with flags
   wirepusher send "Test" "Message" --token abc123
 `,
 	RunE: runSend,
@@ -61,6 +64,7 @@ var (
 	sendActionURL          string
 	sendStdin              bool
 	sendEncryptionPassword string
+	sendJSON               bool
 )
 
 func init() {
@@ -73,99 +77,101 @@ func init() {
 	sendCmd.Flags().StringVar(&sendActionURL, "action", "", "Action URL to open when notification is tapped")
 	sendCmd.Flags().BoolVar(&sendStdin, "stdin", false, "Read message from stdin")
 	sendCmd.Flags().StringVar(&sendEncryptionPassword, "encryption-password", "", "Password for AES-128-CBC encryption (must match type configuration in app)")
+	sendCmd.Flags().BoolVar(&sendJSON, "json", false, "Output response as JSON")
 }
 
 func runSend(cmd *cobra.Command, args []string) error {
 	// Get token and ID from flags, env vars, or config
-	// Note: token and ID are mutually exclusive - only one should be provided
 	token := getTokenOptional(cmd)
-	id := getIDOptional(cmd)
 
-	// Validate that we have either token or ID, but not both
-	if token == "" && id == "" {
-		return fmt.Errorf("either token or id is required (use --token/WIREPUSHER_TOKEN or --id/WIREPUSHER_ID)")
-	}
-	if token != "" && id != "" {
-		return fmt.Errorf("token and id are mutually exclusive - use one or the other, not both")
+	if token == "" {
+		return clierrors.NewUsageError(
+			"API token is required",
+			fmt.Errorf("no token provided via --token flag, WIREPUSHER_TOKEN environment variable, or config file"),
+		)
 	}
 
-	// Print deprecation warning if using ID
-	if id != "" {
-		fmt.Fprintln(os.Stderr, "Warning: The --id flag is deprecated and will be removed in v2.0.0. Please use --token instead.")
-	}
+	logging.Verbose("Using token: %s...", token[:min(8, len(token))])
 
 	// Parse title and message
 	title, message, err := parseTitleAndMessage(cmd, args)
 	if err != nil {
-		return err
+		return clierrors.NewUsageError("Invalid arguments", err)
+	}
+
+	logging.Verbose("Title: %s", title)
+	if message != "" {
+		logging.Verbose("Message: %s", message)
 	}
 
 	// Create client and send notification
 	c := client.New()
 
+	// Set API URL if configured (via env, config file, or default)
+	if apiURL := getAPIURL(cmd); apiURL != "" {
+		c.APIURL = apiURL
+		logging.Verbose("Using API URL: %s", apiURL)
+	}
+
+	// Set timeout if configured (via flag, env var, or default)
+	timeout := getTimeout(cmd)
+	c.SetTimeout(timeout)
+	logging.Verbose("Using timeout: %v", timeout)
+
+	// Set retry configuration
+	maxRetries := getMaxRetries(cmd)
+	c.SetRetryConfig(maxRetries, client.DefaultInitialBackoff)
+	logging.Verbose("Using max retries: %d", maxRetries)
+
+	// Merge type with default from config
+	finalType := mergeTypeWithDefault(sendType)
+	if finalType != "" && finalType != sendType {
+		logging.Verbose("Using default type from config: %s", finalType)
+	}
+
+	// Merge tags with defaults from config
+	finalTags := mergeTagsWithDefaults(sendTags)
+	if len(finalTags) > len(sendTags) {
+		logging.Verbose("Merged with default tags from config: %v", finalTags)
+	}
+
 	opts := &client.SendOptions{
 		Title:              title,
 		Message:            message,
 		Token:              token,
-		ID:                 id,
-		Type:               sendType,
-		Tags:               sendTags,
+		Type:               finalType,
+		Tags:               finalTags,
 		ImageURL:           sendImageURL,
 		ActionURL:          sendActionURL,
 		EncryptionPassword: sendEncryptionPassword,
 	}
 
-	if err := c.Send(opts); err != nil {
-		return fmt.Errorf("failed to send notification: %w", err)
+	logging.Verbose("Sending notification to API...")
+	result, err := c.Send(opts)
+	if err != nil {
+		return categorizeError(err)
 	}
 
-	// Success message
-	fmt.Println("✓ Notification sent successfully")
+	logging.Verbose("Notification sent successfully")
+
+	// Output response
+	if sendJSON {
+		// JSON output
+		jsonBytes, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to format JSON response: %w", err)
+		}
+		fmt.Println(string(jsonBytes))
+	} else {
+		// Human-readable output
+		displaySendResult(result)
+	}
+
 	return nil
 }
 
-// getTokenOptional retrieves the token from flags, env vars, or config (in that order)
-// Returns empty string if not found (caller should validate)
-func getTokenOptional(cmd *cobra.Command) string {
-	// Try flag first
-	token, _ := cmd.Flags().GetString("token")
-	if token != "" {
-		return token
-	}
-
-	// Try environment variable
-	token = os.Getenv("WIREPUSHER_TOKEN")
-	if token != "" {
-		return token
-	}
-
-	// Try config file
-	token = viper.GetString("token")
-	return token
-}
-
-// getIDOptional retrieves the user ID from flags, env vars, or config (in that order)
-// Returns empty string if not found (caller should validate)
-// Deprecated: Legacy authentication. Use getTokenOptional instead.
-func getIDOptional(cmd *cobra.Command) string {
-	// Try flag first
-	id, _ := cmd.Flags().GetString("id")
-	if id != "" {
-		return id
-	}
-
-	// Try environment variable
-	id = os.Getenv("WIREPUSHER_ID")
-	if id != "" {
-		return id
-	}
-
-	// Try config file
-	id = viper.GetString("id")
-	return id
-}
-
 // parseTitleAndMessage extracts title and message from args or stdin
+// Message is optional - can be empty string
 func parseTitleAndMessage(cmd *cobra.Command, args []string) (string, string, error) {
 	var title, message string
 
@@ -187,17 +193,88 @@ func parseTitleAndMessage(cmd *cobra.Command, args []string) (string, string, er
 		}
 		message = strings.Join(lines, "\n")
 
-		if message == "" {
-			return "", "", fmt.Errorf("message cannot be empty when using --stdin")
-		}
+		// Message can be empty - backend allows null message
 	} else {
 		// Get from positional arguments
-		if len(args) < 2 {
-			return "", "", fmt.Errorf("title and message are required (or use --stdin for message)")
+		if len(args) < 1 {
+			return "", "", fmt.Errorf("title is required")
 		}
 		title = args[0]
-		message = args[1]
+
+		// Message is optional (can be omitted)
+		if len(args) >= 2 {
+			message = args[1]
+		}
 	}
 
 	return title, message, nil
+}
+
+// categorizeError converts a generic error into a CLI error with appropriate exit code
+func categorizeError(err error) error {
+	errStr := err.Error()
+
+	// Check for specific error patterns and categorize
+	if strings.Contains(errStr, "validation error") || strings.Contains(errStr, "tag validation") {
+		return clierrors.NewUsageError("Invalid input", err)
+	}
+
+	if strings.Contains(errStr, "authentication error") || strings.Contains(errStr, "invalid_api_token") {
+		return clierrors.NewUsageError("Authentication failed", fmt.Errorf("%v\n\nGet your token: Open WirePusher app → Settings → Help → Copy token\nOr set it: wirepusher config set token YOUR_TOKEN", err))
+	}
+
+	if strings.Contains(errStr, "rate limit exceeded") {
+		return clierrors.NewAPIError("Rate limit exceeded", fmt.Errorf("%v\n\nThe send endpoint allows 30 requests per hour. Please wait before trying again.", err))
+	}
+
+	if strings.Contains(errStr, "API error") {
+		return clierrors.NewAPIError("API request failed", err)
+	}
+
+	if strings.Contains(errStr, "request failed") || strings.Contains(errStr, "connection") {
+		return clierrors.NewSystemError("Network error", fmt.Errorf("%v\n\nPlease check your internet connection and try again.", err))
+	}
+
+	// Default to system error for unknown errors
+	return clierrors.NewSystemError("Unexpected error", err)
+}
+
+// displaySendResult formats and displays the send result in human-readable format
+func displaySendResult(result *client.SendResult) {
+	fmt.Println("✓ Notification sent successfully")
+	fmt.Println()
+
+	// Display team or personal token result
+	if result.Response.TeamID != "" {
+		// Team token result
+		fmt.Printf("Team: %s\n", result.Response.TeamID)
+		fmt.Printf("Members notified: %d\n", result.Response.MemberCount)
+	} else if result.Response.ReceivedNotification != nil {
+		// Personal token result
+		notif := result.Response.ReceivedNotification
+		fmt.Printf("Notification ID: %s\n", notif.NotificationID)
+		fmt.Printf("Title: %s\n", notif.Title)
+		if notif.Body != "" {
+			fmt.Printf("Message: %s\n", notif.Body)
+		}
+		if notif.Type != "" {
+			fmt.Printf("Type: %s\n", notif.Type)
+		}
+		if len(notif.Tags) > 0 {
+			fmt.Printf("Tags: %s\n", strings.Join(notif.Tags, ", "))
+		}
+		if notif.ExpiresAt != "" {
+			fmt.Printf("Expires: %s\n", notif.ExpiresAt)
+		}
+	}
+
+	// Display rate limit info if available
+	if result.RateLimit != nil && result.RateLimit.Limit != "" {
+		fmt.Println()
+		fmt.Printf("Rate Limit: %s/%s remaining", result.RateLimit.Remaining, result.RateLimit.Limit)
+		if result.RateLimit.Reset != "" {
+			fmt.Printf(" (resets at %s)", result.RateLimit.Reset)
+		}
+		fmt.Println()
+	}
 }
