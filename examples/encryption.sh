@@ -2,7 +2,7 @@
 # Encryption example - AES-128-CBC encrypted notifications
 
 # Prerequisites:
-# 1. Configure authentication (token or user ID)
+# 1. Configure authentication (token)
 # 2. In WirePusher app, create notification types with encryption enabled
 # 3. Set the same encryption password in the app as used in these examples
 

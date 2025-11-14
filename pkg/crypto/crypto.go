@@ -1,3 +1,28 @@
+// Package crypto provides message encryption utilities for WirePusher notifications.
+//
+// The package implements AES-128-CBC encryption with custom base64 encoding to
+// maintain compatibility with the WirePusher mobile app's encryption scheme.
+//
+// Encryption process:
+//  1. Derive 128-bit key from password using SHA1 hash (first 16 bytes)
+//  2. Generate random 16-byte initialization vector (IV)
+//  3. Encrypt message using AES-128-CBC with PKCS7 padding
+//  4. Encode encrypted data using custom Base64 (URL-safe with custom chars)
+//  5. Return encrypted message and IV (hex-encoded)
+//
+// The encryption scheme matches the WirePusher iOS/Android app implementation
+// for end-to-end encrypted notifications. The encrypted message is stored on
+// the server and decrypted locally on the device using the same password.
+//
+// Example usage:
+//
+//	ivBytes, ivHex, err := crypto.GenerateIV()
+//	encrypted, err := crypto.EncryptMessage("sensitive data", "password", ivBytes)
+//	// Send encrypted message and ivHex to API
+//
+// Note: SHA1 is used for key derivation to maintain compatibility with the
+// existing WirePusher app implementation. For new implementations, consider
+// using PBKDF2 or Argon2.
 package crypto
 
 import (

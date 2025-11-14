@@ -1,3 +1,49 @@
+// Package config provides configuration management for WirePusher CLI.
+//
+// The package handles loading, saving, and retrieving configuration values
+// from the user's config file (~/.wirepusher/config.yaml). Configuration
+// files store persistent settings like API tokens, custom API URLs, and
+// other preferences.
+//
+// Configuration Priority (highest to lowest):
+//  1. Command-line flags (--token, --timeout, etc.)
+//  2. Environment variables (WIREPUSHER_TOKEN, WIREPUSHER_API_URL, etc.)
+//  3. Config file (~/.wirepusher/config.yaml)
+//
+// Security:
+//   - Config directory created with 0700 permissions (owner-only access)
+//   - Config files created with 0600 permissions (owner read/write only)
+//   - Prevents token exposure to other users on shared systems
+//
+// Example usage:
+//
+//	// Set a value
+//	err := config.Set("token", "your-api-token")
+//
+//	// Get a value
+//	token, err := config.Get("token")
+//
+//	// Load all config
+//	cfg, err := config.Load()
+//
+// Supported configuration keys:
+//   - token: WirePusher API token
+//   - api_url: Custom API endpoint URL
+//   - timeout: HTTP request timeout in seconds (overrides default 30s)
+//   - max_retries: Maximum number of retry attempts (overrides default 3)
+//   - default_type: Default notification type (e.g., "alert", "deploy", "info")
+//   - default_tags: Default tags to include with all notifications (array of strings)
+//
+// Example config file (~/.wirepusher/config.yaml):
+//
+//	token: abc123
+//	api_url: https://custom-api.example.com/send
+//	timeout: 60
+//	max_retries: 5
+//	default_type: deploy
+//	default_tags:
+//	  - production
+//	  - automated
 package config
 
 import (
@@ -18,8 +64,13 @@ const (
 
 // Config represents the WirePusher CLI configuration
 type Config struct {
-	Token string `mapstructure:"token"`
-	ID    string `mapstructure:"id"`
+	Token       string   `mapstructure:"token"`
+	ID          string   `mapstructure:"id"`
+	APIURL      string   `mapstructure:"api_url"`
+	Timeout     int      `mapstructure:"timeout"`      // HTTP request timeout in seconds
+	MaxRetries  int      `mapstructure:"max_retries"`  // Maximum number of retry attempts
+	DefaultType string   `mapstructure:"default_type"` // Default notification type
+	DefaultTags []string `mapstructure:"default_tags"` // Default tags to include with all notifications
 }
 
 // GetConfigDir returns the path to the config directory
@@ -41,13 +92,15 @@ func GetConfigPath() (string, error) {
 }
 
 // EnsureConfigDir creates the config directory if it doesn't exist
+// Uses 0700 permissions to ensure only the owner can read the config (which contains tokens)
 func EnsureConfigDir() error {
 	configDir, err := GetConfigDir()
 	if err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	// Use 0700 (owner-only) to protect tokens stored in config files
+	if err := os.MkdirAll(configDir, 0700); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -96,6 +149,7 @@ func Load() (*Config, error) {
 }
 
 // Set sets a configuration value and saves it to the config file
+// Config file is created with 0600 permissions to protect sensitive data (tokens)
 func Set(key, value string) error {
 	if err := EnsureConfigDir(); err != nil {
 		return err
@@ -114,6 +168,11 @@ func Set(key, value string) error {
 
 	if err := viper.WriteConfigAs(configPath); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	// Ensure config file has secure permissions (owner-only read/write)
+	if err := os.Chmod(configPath, 0600); err != nil {
+		return fmt.Errorf("failed to set config file permissions: %w", err)
 	}
 
 	return nil

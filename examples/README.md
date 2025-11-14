@@ -7,15 +7,13 @@ This directory contains example scripts demonstrating various use cases for the 
 Before running these examples, you need:
 
 1. WirePusher CLI installed
-2. API credentials from your WirePusher account (EITHER token OR user ID - not both)
+2. API credentials from your WirePusher account (token)
 
 Set up your credentials:
 ```bash
 # Option 1: Using token (recommended)
 wirepusher config set token YOUR_TOKEN
 
-# Option 2: Using user ID (alternative)
-wirepusher config set id YOUR_USER_ID
 ```
 
 Or use environment variables:
@@ -23,8 +21,6 @@ Or use environment variables:
 # Using token
 export WIREPUSHER_TOKEN="your-token"
 
-# Using user ID
-export WIREPUSHER_ID="your-user-id"
 ```
 
 ## Examples
@@ -53,8 +49,7 @@ deploy:
     - ./examples/ci-cd.sh
   variables:
     WIREPUSHER_TOKEN: $WIREPUSHER_TOKEN
-    WIREPUSHER_ID: $WIREPUSHER_ID
-```
+    ```
 
 ### [log-monitoring.sh](log-monitoring.sh)
 Log file monitoring showing:
@@ -120,7 +115,7 @@ df -h | wirepusher send "Disk Usage" --stdin
 
 ## Authentication Methods
 
-**Important:** Use EITHER token OR user ID - not both. These credentials are mutually exclusive.
+**Important:** Use token for authentication.
 
 The CLI supports three authentication methods (in priority order):
 
@@ -129,8 +124,7 @@ The CLI supports three authentication methods (in priority order):
    # Using token (recommended)
    wirepusher send "Title" "Message" --token abc123
 
-   # Using user ID (alternative)
-   wirepusher send "Title" "Message" --id user123
+   
    ```
 
 2. **Environment variables**
@@ -139,8 +133,7 @@ The CLI supports three authentication methods (in priority order):
    export WIREPUSHER_TOKEN="your-token"
    wirepusher send "Title" "Message"
 
-   # Using user ID
-   export WIREPUSHER_ID="your-user-id"
+   
    wirepusher send "Title" "Message"
    ```
 
@@ -150,8 +143,7 @@ The CLI supports three authentication methods (in priority order):
    wirepusher config set token your-token
    wirepusher send "Title" "Message"
 
-   # Using user ID
-   wirepusher config set id your-user-id
+   
    wirepusher send "Title" "Message"
    ```
 
@@ -162,14 +154,13 @@ The CLI supports three authentication methods (in priority order):
 chmod +x examples/*.sh
 ```
 
-### Token or ID not found
+### Token not found
 ```bash
 # Check your configuration
 wirepusher config list
 
 # Or set it
 wirepusher config set token YOUR_TOKEN
-wirepusher config set id YOUR_ID
 ```
 
 ### Test your setup
