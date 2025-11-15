@@ -14,10 +14,10 @@ if [ $? -eq 0 ]; then
   wirepusher send "Build Passed" "Pipeline #$CI_PIPELINE_ID completed successfully" \
     --type success \
     --tag ci \
-    --action "https://gitlab.com/your-project/-/pipelines/$CI_PIPELINE_ID"
+    --action-url "https://gitlab.com/your-project/-/pipelines/$CI_PIPELINE_ID"
 else
   wirepusher send "Build Failed" "Pipeline #$CI_PIPELINE_ID failed" \
     --type alert \
     --tag ci \
-    --action "https://gitlab.com/your-project/-/pipelines/$CI_PIPELINE_ID"
+    --action-url "https://gitlab.com/your-project/-/pipelines/$CI_PIPELINE_ID"
 fi

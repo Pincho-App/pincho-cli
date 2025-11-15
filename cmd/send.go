@@ -38,8 +38,8 @@ Examples:
 
   # With image and action URL
   wirepusher send "Success" "All tests passed" \
-    --image https://example.com/success.png \
-    --action https://example.com/build/123
+    --image-url https://example.com/success.png \
+    --action-url https://example.com/build/123
 
   # With encryption (message encrypted with AES-128-CBC)
   wirepusher send "Secure Alert" "Sensitive data here" \
@@ -73,8 +73,8 @@ func init() {
 	// Flags specific to send command
 	sendCmd.Flags().StringVar(&sendType, "type", "", "Notification type (e.g., alert, info, success)")
 	sendCmd.Flags().StringSliceVar(&sendTags, "tag", []string{}, "Tags for categorization (can be used multiple times)")
-	sendCmd.Flags().StringVar(&sendImageURL, "image", "", "Image URL to display with notification")
-	sendCmd.Flags().StringVar(&sendActionURL, "action", "", "Action URL to open when notification is tapped")
+	sendCmd.Flags().StringVar(&sendImageURL, "image-url", "", "Image URL to display with notification")
+	sendCmd.Flags().StringVar(&sendActionURL, "action-url", "", "Action URL to open when notification is tapped")
 	sendCmd.Flags().BoolVar(&sendStdin, "stdin", false, "Read message from stdin")
 	sendCmd.Flags().StringVar(&sendEncryptionPassword, "encryption-password", "", "Password for AES-128-CBC encryption (must match type configuration in app)")
 	sendCmd.Flags().BoolVar(&sendJSON, "json", false, "Output response as JSON")

@@ -29,7 +29,7 @@ echo
 echo "3. Encrypted notification with image"
 wirepusher send "Security Report" "Unauthorized access attempt detected" \
   --type security \
-  --image https://example.com/security-icon.png \
+  --image-url https://example.com/security-icon.png \
   --encryption-password "security-password"
 echo
 
@@ -37,7 +37,7 @@ echo
 echo "4. Encrypted notification with action URL"
 wirepusher send "Password Reset" "Your password reset link is ready" \
   --type account \
-  --action https://example.com/reset-password \
+  --action-url https://example.com/reset-password \
   --encryption-password "account-password"
 echo
 

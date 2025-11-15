@@ -222,6 +222,33 @@ wirepusher send "Title" --verbose
 # - Request progress
 ```
 
+## Validation Philosophy
+
+The WirePusher CLI validates **more strictly** than the library clients to provide immediate user feedback:
+
+### ✅ CLI Validates
+
+- **Required parameters**: Title and token
+- **Tag limits**: Max 10 tags, 50 characters each (API limits)
+- **Tag format**: Alphanumeric, hyphens, underscores only
+- **Immediate feedback**: Errors shown before API call
+
+### ✅ CLI Normalizes
+
+- **Tags**: Lowercase conversion, whitespace trimming, deduplication
+- **Automatic**: No extra flags needed
+
+### Why Stricter Validation in CLI?
+
+**User experience matters.** CLI users benefit from immediate feedback before making API calls:
+
+- ✅ Fast-fail saves API quota
+- ✅ Clear error messages with actionable guidance
+- ✅ No surprise failures after network round-trip
+- ✅ Matches documented API limits upfront
+
+**Note:** WirePusher libraries (Go, Python) perform minimal validation and let the API be the source of truth. This difference is intentional - CLI serves interactive users, libraries serve programmatic integrations.
+
 ## Commands Reference
 
 ### send
@@ -233,8 +260,8 @@ wirepusher send <title> [message] [flags]
 **Common flags:**
 - `--type string` - Notification type (deploy, alert, etc.)
 - `--tag strings` - Tags (repeatable)
-- `--image string` - Image URL
-- `--action string` - Action URL (opens on tap)
+- `--image-url string` - Image URL
+- `--action-url string` - Action URL (opens on tap)
 - `--encryption-password string` - Encrypt message
 - `--stdin` - Read message from stdin
 - `--json` - JSON output
