@@ -57,3 +57,32 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
+# GitLab releases configuration
+gitlab_urls:
+  api: https://gitlab.com/api/v4/
+  download: https://gitlab.com
+  skip_tls_verify: false
+  use_package_registry: false
+  use_job_token: false
+
+release:
+  gitlab:
+    owner: wirepusher
+    name: wirepusher-cli
+  draft: false
+  prerelease: auto
+  name_template: "WirePusher CLI {{.Version}}"
+  footer: |
+    ## Installation
+
+    ### Download Binary
+    Download the appropriate archive for your platform from the assets below.
+
+    ### Verify Checksums
+    ```bash
+    sha256sum -c checksums.txt
+    ```
+
+    ---
+    Full documentation: https://gitlab.com/wirepusher/wirepusher-cli
+

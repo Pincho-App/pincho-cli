@@ -128,6 +128,96 @@ GOOS=linux GOARCH=amd64 go build -o wirepusher-linux-amd64
 GOOS=darwin GOARCH=arm64 go build -o wirepusher-darwin-arm64
 ```
 
+## CI/CD Pipeline
+
+Every push to the repository triggers Cloud Build:
+
+- Runs tests with race detector and coverage thresholds
+- Checks code formatting (gofmt)
+- Runs static analysis (go vet)
+- Verifies builds for all 7 target platforms
+
+Git tags (`v*.*.*`) trigger full release pipeline with GoReleaser.
+
+For CI/CD setup details, see [docs/CI_CD_SETUP.md](docs/CI_CD_SETUP.md).
+
+## Releasing (For Maintainers)
+
+Releases are automated via Cloud Build and GoReleaser. Here's the process:
+
+### Pre-Release Checklist
+
+1. **Update CHANGELOG.md**
+   - Move items from `[Unreleased]` to new version section
+   - Add release date: `## [1.0.0] - 2024-01-15`
+
+2. **Verify test coverage**
+   ```bash
+   go test -coverprofile=coverage.out ./...
+   go tool cover -func=coverage.out | grep total
+   # Must be >= 30% overall
+   ```
+
+3. **Run all quality checks**
+   ```bash
+   go fmt ./...
+   go vet ./...
+   go test -race ./...
+   ```
+
+4. **Commit and push**
+   ```bash
+   git add -A
+   git commit -m "chore: Prepare for v1.0.0 release"
+   git push origin main
+   ```
+
+### Create Release
+
+```bash
+# Create annotated tag
+git tag -a v1.0.0 -m "Release v1.0.0"
+
+# Push tag (triggers full release pipeline)
+git push origin v1.0.0
+```
+
+### Post-Release Verification
+
+1. **Monitor Cloud Build**
+   - Check: https://console.cloud.google.com/cloud-build/builds?project=wirepusher-dev
+   - All steps should pass (tests, GoReleaser)
+
+2. **Verify GitLab Release**
+   - Check: https://gitlab.com/wirepusher/wirepusher-cli/-/releases
+   - Should have 7 platform binaries + checksums.txt
+
+3. **Test Binary Download**
+   ```bash
+   # Download and verify
+   curl -LO https://gitlab.com/wirepusher/wirepusher-cli/-/releases/v1.0.0/downloads/wirepusher_1.0.0_darwin_arm64.tar.gz
+   tar -xzf wirepusher_1.0.0_darwin_arm64.tar.gz
+   ./wirepusher --version
+   ```
+
+### Version Numbering
+
+Follow [Semantic Versioning](https://semver.org/):
+- **MAJOR**: Breaking API changes
+- **MINOR**: New features (backward compatible)
+- **PATCH**: Bug fixes (backward compatible)
+
+Examples:
+- `v1.0.0` - First stable release
+- `v1.1.0` - Added new command
+- `v1.1.1` - Fixed bug in existing command
+- `v2.0.0` - Changed flag names (breaking)
+
+Pre-releases:
+- `v1.0.0-alpha.1` - Early testing
+- `v1.0.0-beta.1` - Feature complete, needs testing
+- `v1.0.0-rc.1` - Release candidate
+
 ## Need Help?
 
 - **Architecture questions?** See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
