@@ -1,10 +1,12 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNew(t *testing.T) {
@@ -21,6 +23,12 @@ func TestNew(t *testing.T) {
 	if client.HTTPClient.Timeout != DefaultTimeout {
 		t.Errorf("expected timeout to be %v, got %v", DefaultTimeout, client.HTTPClient.Timeout)
 	}
+
+	// Verify User-Agent is set
+	expectedUserAgent := "wirepusher-cli/" + Version
+	if client.UserAgent != expectedUserAgent {
+		t.Errorf("expected UserAgent to be %s, got %s", expectedUserAgent, client.UserAgent)
+	}
 }
 
 func TestClient_Send_Success(t *testing.T) {
@@ -36,6 +44,18 @@ func TestClient_Send_Success(t *testing.T) {
 			t.Errorf("expected Content-Type application/json, got %s", r.Header.Get("Content-Type"))
 		}
 
+		// Verify Authorization header (Bearer token auth)
+		authHeader := r.Header.Get("Authorization")
+		if authHeader != "Bearer test-token" {
+			t.Errorf("expected Authorization header 'Bearer test-token', got '%s'", authHeader)
+		}
+
+		// Verify User-Agent header
+		userAgent := r.Header.Get("User-Agent")
+		if !strings.HasPrefix(userAgent, "wirepusher-cli/") {
+			t.Errorf("expected User-Agent to start with 'wirepusher-cli/', got '%s'", userAgent)
+		}
+
 		// Send success response
 		w.WriteHeader(200)
 		w.Write([]byte(`{"status": "success", "message": "Notification sent"}`))
@@ -45,14 +65,15 @@ func TestClient_Send_Success(t *testing.T) {
 	// Create client and send notification
 	client := New()
 	client.APIURL = server.URL
+	client.SetToken("test-token")
 
 	opts := &SendOptions{
 		Title:   "Test Title",
 		Message: "Test Message",
-		Token:   "test-token",
 	}
 
-	result, err := client.Send(opts)
+	ctx := context.Background()
+	result, err := client.Send(ctx, opts)
 	if err != nil {
 		t.Errorf("expected no error, got: %v", err)
 	}
@@ -75,19 +96,19 @@ func TestClient_Send_WithAllOptions(t *testing.T) {
 	// Create client and send notification with all options
 	client := New()
 	client.APIURL = server.URL
+	client.SetToken("test-token")
 
 	opts := &SendOptions{
-		Title:   "Test Title",
-		Message: "Test Message",
-		Token:   "test-token",
-
+		Title:     "Test Title",
+		Message:   "Test Message",
 		Type:      "alert",
 		Tags:      []string{"tag1", "tag2"},
 		ImageURL:  "https://example.com/image.png",
 		ActionURL: "https://example.com/action",
 	}
 
-	result, err := client.Send(opts)
+	ctx := context.Background()
+	result, err := client.Send(ctx, opts)
 	if err != nil {
 		t.Errorf("expected no error, got: %v", err)
 	}
@@ -97,23 +118,23 @@ func TestClient_Send_WithAllOptions(t *testing.T) {
 }
 
 func TestClient_Send_ValidationErrors(t *testing.T) {
-	client := New()
-
 	tests := []struct {
 		name    string
+		token   string
 		opts    *SendOptions
 		wantErr string
 	}{
 		{
-			name: "missing title",
+			name:  "missing title",
+			token: "token",
 			opts: &SendOptions{
 				Message: "Test",
-				Token:   "token",
 			},
 			wantErr: "title is required",
 		},
 		{
-			name: "missing token",
+			name:  "missing token",
+			token: "", // Empty token on client
 			opts: &SendOptions{
 				Title:   "Test",
 				Message: "Test",
@@ -121,28 +142,28 @@ func TestClient_Send_ValidationErrors(t *testing.T) {
 			wantErr: "token is required",
 		},
 		{
-			name: "invalid tags - too many",
+			name:  "invalid tags - too many",
+			token: "token",
 			opts: &SendOptions{
 				Title: "Test",
-				Token: "token",
 				Tags:  []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"},
 			},
 			wantErr: "maximum of 10 tags allowed",
 		},
 		{
-			name: "invalid tags - too long",
+			name:  "invalid tags - too long",
+			token: "token",
 			opts: &SendOptions{
 				Title: "Test",
-				Token: "token",
 				Tags:  []string{"this-is-a-very-long-tag-name-that-exceeds-the-fifty-character-limit-by-far"},
 			},
 			wantErr: "exceeds maximum length of 50 characters",
 		},
 		{
-			name: "invalid tags - invalid characters",
+			name:  "invalid tags - invalid characters",
+			token: "token",
 			opts: &SendOptions{
 				Title: "Test",
-				Token: "token",
 				Tags:  []string{"invalid tag with spaces"},
 			},
 			wantErr: "contains invalid characters",
@@ -151,7 +172,10 @@ func TestClient_Send_ValidationErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := client.Send(tt.opts)
+			client := New()
+			client.SetToken(tt.token)
+			ctx := context.Background()
+			result, err := client.Send(ctx, tt.opts)
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
@@ -200,7 +224,7 @@ func TestClient_Send_HTTPErrors(t *testing.T) {
 			name:       "500 server error",
 			statusCode: 500,
 			response:   `{"status": "error", "message": "Internal server error"}`,
-			wantErr:    "API error (500)",
+			wantErr:    "server error",
 		},
 	}
 
@@ -214,14 +238,15 @@ func TestClient_Send_HTTPErrors(t *testing.T) {
 
 			client := New()
 			client.APIURL = server.URL
+			client.SetToken("token")
 
 			opts := &SendOptions{
 				Title:   "Test",
 				Message: "Test",
-				Token:   "token",
 			}
 
-			result, err := client.Send(opts)
+			ctx := context.Background()
+			result, err := client.Send(ctx, opts)
 			if err == nil {
 				t.Fatal("expected error, got nil")
 			}
@@ -253,15 +278,16 @@ func TestClient_Send_WithEncryption(t *testing.T) {
 
 	client := New()
 	client.APIURL = server.URL
+	client.SetToken("test-token")
 
 	opts := &SendOptions{
 		Title:              "Test Title",
 		Message:            "Secret message",
-		Token:              "test-token",
 		EncryptionPassword: "test-password",
 	}
 
-	result, err := client.Send(opts)
+	ctx := context.Background()
+	result, err := client.Send(ctx, opts)
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
@@ -277,5 +303,67 @@ func TestClient_Send_WithEncryption(t *testing.T) {
 	// Verify IV was sent
 	if !strings.Contains(receivedBody, "\"iv\":") {
 		t.Error("expected IV field in request body when encryption is enabled")
+	}
+
+	// Verify token is NOT in request body (should be in header)
+	if strings.Contains(receivedBody, "\"token\":") {
+		t.Error("expected token to be in Authorization header, not in request body")
+	}
+}
+
+func TestClient_CalculateBackoff_WithRetryAfter(t *testing.T) {
+	client := New()
+
+	tests := []struct {
+		name            string
+		attempt         int
+		statusCode      int
+		retryAfter      string
+		expectedBackoff time.Duration
+	}{
+		{
+			name:            "rate limit with Retry-After header",
+			attempt:         0,
+			statusCode:      429,
+			retryAfter:      "5",
+			expectedBackoff: 5 * time.Second,
+		},
+		{
+			name:            "rate limit with Retry-After header - capped at 30s",
+			attempt:         0,
+			statusCode:      429,
+			retryAfter:      "60",
+			expectedBackoff: 30 * time.Second,
+		},
+		{
+			name:            "rate limit without Retry-After header",
+			attempt:         0,
+			statusCode:      429,
+			retryAfter:      "",
+			expectedBackoff: 5 * time.Second, // Default for 429
+		},
+		{
+			name:            "non-rate-limit error ignores Retry-After",
+			attempt:         0,
+			statusCode:      500,
+			retryAfter:      "10",
+			expectedBackoff: 1 * time.Second, // Uses default backoff
+		},
+		{
+			name:            "invalid Retry-After uses default",
+			attempt:         0,
+			statusCode:      429,
+			retryAfter:      "invalid",
+			expectedBackoff: 5 * time.Second,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			backoff := client.calculateBackoff(tt.attempt, tt.statusCode, tt.retryAfter)
+			if backoff != tt.expectedBackoff {
+				t.Errorf("expected backoff %v, got %v", tt.expectedBackoff, backoff)
+			}
+		})
 	}
 }

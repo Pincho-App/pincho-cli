@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/spf13/cobra"
 	"gitlab.com/wirepusher/cli/pkg/config"
@@ -41,9 +42,15 @@ var configSetCmd = &cobra.Command{
 
 Supported keys:
   - token: Your WirePusher API token
+  - timeout: Request timeout in seconds (default: 30)
+  - max_retries: Maximum retry attempts (default: 3)
+  - api_url: Custom API endpoint URL
 
-Example:
+Examples:
   wirepusher config set token wpt_abc123xyz
+  wirepusher config set timeout 60
+  wirepusher config set max_retries 5
+  wirepusher config set api_url https://custom.api.wirepusher.dev/send
 `,
 	Args: cobra.ExactArgs(2),
 	RunE: runConfigSet,
@@ -85,9 +92,21 @@ func runConfigSet(cmd *cobra.Command, args []string) error {
 	key := args[0]
 	value := args[1]
 
-	// Validate key
-	if key != "token" {
-		return fmt.Errorf("invalid key '%s' (supported: token)", key)
+	// Validate key and value types
+	switch key {
+	case "token", "api_url":
+		// String values, use as-is
+	case "timeout", "max_retries":
+		// Integer values, validate
+		intValue, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid value for %s: must be an integer", key)
+		}
+		if intValue < 0 {
+			return fmt.Errorf("invalid value for %s: must be non-negative", key)
+		}
+	default:
+		return fmt.Errorf("invalid key '%s' (supported: token, timeout, max_retries, api_url)", key)
 	}
 
 	if err := config.Set(key, value); err != nil {

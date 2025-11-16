@@ -53,99 +53,142 @@ After you submit a report:
 
 ### For Users
 
-When using the WirePusher JavaScript SDK:
+When using the WirePusher CLI:
 
-1. **Keep the SDK updated** to the latest version
+1. **Keep the CLI updated** to the latest version
 2. **Never commit credentials** to version control
 3. **Use environment variables** for sensitive configuration
-4. **Validate input** before sending to the SDK
+4. **Validate input** in scripts before passing to the CLI
 5. **Handle errors gracefully** without exposing sensitive information
 6. **Use HTTPS** for all network communication
-7. **Limit token scope** to minimum required permissions
+7. **Protect config files** with secure permissions
 
 ### Credential Management
 
-```typescript
-// ❌ Bad - Hardcoded credentials
-const client = new WirePusher({
-  token: 'wpt_abc123',
-  userId: 'user123'
-});
+```bash
+# ❌ Bad - Hardcoded token in script
+wirepusher send "Alert" "Message" --token wpt_abc123
 
-// ✅ Good - Environment variables
-const client = new WirePusher({
-  token: process.env.WIREPUSHER_TOKEN!,
-  userId: process.env.WIREPUSHER_USER_ID!
-});
+# ❌ Bad - Token in shell history
+export WIREPUSHER_TOKEN=wpt_abc123
+
+# ✅ Good - Token from secure environment variable
+WIREPUSHER_TOKEN=$(cat ~/.secrets/wirepusher) wirepusher send "Alert" "Message"
+
+# ✅ Good - Token stored in config file with secure permissions
+wirepusher config set token wpt_abc123
+# Config stored in ~/.wirepusher/config.yaml (permissions: 0600)
+
+# ✅ Good - Token from password manager
+wirepusher send "Alert" "Message" --token "$(pass show wirepusher/token)"
 ```
 
-### Error Handling
+### Config File Security
 
-```typescript
-// ❌ Bad - Exposes sensitive information
-try {
-  await client.send(title, message);
-} catch (error) {
-  console.error(error); // May log tokens or user IDs
-  throw error;
-}
+```bash
+# Check config file permissions
+ls -la ~/.wirepusher/config.yaml
+# Should show: -rw------- (0600)
 
-// ✅ Good - Safe error handling
-try {
-  await client.send(title, message);
-} catch (error) {
-  if (error instanceof WirePusherError) {
-    console.error('Notification failed:', error.message);
-    // Handle without exposing credentials
-  }
-}
+# Fix permissions if needed
+chmod 600 ~/.wirepusher/config.yaml
+chmod 700 ~/.wirepusher/
 ```
 
-### Input Validation
+### Error Handling in Scripts
 
-```typescript
-// ❌ Bad - No validation
-app.post('/notify', async (req, res) => {
-  await client.send(req.body.title, req.body.message);
-});
+```bash
+# ❌ Bad - No error handling
+wirepusher send "Alert" "Message"
 
-// ✅ Good - Validate input
-app.post('/notify', async (req, res) => {
-  const { title, message } = req.body;
+# ✅ Good - Handle errors without exposing sensitive info
+if ! wirepusher send "Alert" "Message" 2>/dev/null; then
+  echo "Failed to send notification" >&2
+  exit 1
+fi
 
-  if (!title || !message) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
+# ✅ Good - Check exit codes for specific errors
+wirepusher send "Alert" "Message"
+case $? in
+  0) echo "Success" ;;
+  1) echo "Usage error - check arguments" >&2 ;;
+  2) echo "API error - rate limit or validation" >&2 ;;
+  3) echo "System error - network issue" >&2 ;;
+esac
+```
 
-  if (title.length > 256 || message.length > 4096) {
-    return res.status(400).json({ error: 'Content too long' });
-  }
+### Input Validation in Scripts
 
-  await client.send(title, message);
-});
+```bash
+# ❌ Bad - No validation
+wirepusher send "$USER_INPUT_TITLE" "$USER_INPUT_MESSAGE"
+
+# ✅ Good - Validate input before sending
+title="$1"
+message="$2"
+
+# Check for empty values
+if [[ -z "$title" ]]; then
+  echo "Error: Title is required" >&2
+  exit 1
+fi
+
+# Check for reasonable length
+if [[ ${#title} -gt 256 ]]; then
+  echo "Error: Title too long (max 256 chars)" >&2
+  exit 1
+fi
+
+if [[ ${#message} -gt 4096 ]]; then
+  echo "Error: Message too long (max 4096 chars)" >&2
+  exit 1
+fi
+
+wirepusher send "$title" "$message"
+```
+
+### CI/CD Pipeline Security
+
+```yaml
+# ✅ Good - Use CI/CD secrets, not hardcoded values
+# GitLab CI example
+send_notification:
+  script:
+    - wirepusher send "Deploy Complete" "Version $CI_COMMIT_TAG deployed"
+  variables:
+    WIREPUSHER_TOKEN: $WIREPUSHER_TOKEN  # Set in CI/CD settings
 ```
 
 ## Known Security Considerations
 
 ### API Token Security
 
-- Tokens are transmitted in API requests and should be kept confidential
-- Tokens are stored in plaintext by the SDK (secure storage is the user's responsibility)
+- Tokens are transmitted in `Authorization: Bearer` header over HTTPS
+- Tokens are stored in plaintext in `~/.wirepusher/config.yaml`
+- Config file permissions default to 0600 (owner read/write only)
 - Compromised tokens can be used to send notifications as your user
 - Rotate tokens regularly as a security best practice
 
 ### Network Communication
 
 - All communication with WirePusher API is over HTTPS
-- The SDK uses native fetch which respects system-level TLS/SSL settings
-- Certificate validation is handled by the Node.js runtime
+- The CLI uses Go's standard `net/http` package
+- Certificate validation is handled by the Go runtime
+- No custom TLS configuration - uses system defaults
+
+### Binary Security
+
+- Single static binary with no external dependencies
+- No runtime code execution or dynamic loading
+- No network connections except to WirePusher API
+- No local file access except for config file
 
 ### Dependencies
 
-This SDK has **zero runtime dependencies** to minimize supply chain risks:
-- Uses native fetch API (Node.js 18+)
-- All development dependencies are thoroughly vetted
-- Regular dependency audits via `npm audit`
+This CLI has **minimal dependencies** to reduce supply chain risks:
+- `github.com/spf13/cobra` - CLI framework (widely used, well-audited)
+- `github.com/spf13/viper` - Configuration management
+- All dependencies are checked with `go mod verify`
 
 ## Vulnerability Disclosure Process
 
@@ -159,12 +202,12 @@ When we receive a security bug report:
    - Fixed versions
    - Workarounds (if any)
    - Credit to reporter
-4. **Release patched versions** to npm
-5. **Publish security advisory** on GitLab and npm
+4. **Release patched versions**
+5. **Publish security advisory** on GitLab
 6. **Notify users** via:
    - GitLab security advisory
-   - npm security advisory
    - Project README update
+   - Release notes
 
 ## Security Audit History
 
@@ -180,9 +223,9 @@ We thank the following individuals for responsibly disclosing security vulnerabi
 
 ## Resources
 
-- [npm Security Best Practices](https://docs.npmjs.com/packages-and-modules/securing-your-code)
-- [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
+- [Go Security Best Practices](https://go.dev/doc/security/best-practices)
 - [OWASP API Security Top 10](https://owasp.org/www-project-api-security/)
+- [Shell Script Security](https://wiki.bash-hackers.org/howto/conffile)
 
 ## Questions?
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -91,7 +92,7 @@ func runSend(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	logging.Verbose("Using token: %s...", token[:min(8, len(token))])
+	logging.Debug("Token configured", "token_prefix", token[:min(8, len(token))])
 
 	// Parse title and message
 	title, message, err := parseTitleAndMessage(cmd, args)
@@ -99,46 +100,41 @@ func runSend(cmd *cobra.Command, args []string) error {
 		return clierrors.NewUsageError("Invalid arguments", err)
 	}
 
-	logging.Verbose("Title: %s", title)
-	if message != "" {
-		logging.Verbose("Message: %s", message)
-	}
+	logging.Debug("Notification content parsed", "title", title, "message_length", len(message))
 
 	// Create client and send notification
 	c := client.New()
 
+	// Set token for authentication
+	c.SetToken(token)
+
 	// Set API URL if configured (via env, config file, or default)
 	if apiURL := getAPIURL(cmd); apiURL != "" {
 		c.APIURL = apiURL
-		logging.Verbose("Using API URL: %s", apiURL)
 	}
+	logging.Debug("API client configured", "api_url", c.APIURL)
 
 	// Set timeout if configured (via flag, env var, or default)
 	timeout := getTimeout(cmd)
 	c.SetTimeout(timeout)
-	logging.Verbose("Using timeout: %v", timeout)
 
 	// Set retry configuration
 	maxRetries := getMaxRetries(cmd)
 	c.SetRetryConfig(maxRetries, client.DefaultInitialBackoff)
-	logging.Verbose("Using max retries: %d", maxRetries)
+
+	logging.Debug("Client settings", "timeout", timeout, "max_retries", maxRetries)
 
 	// Merge type with default from config
 	finalType := mergeTypeWithDefault(sendType)
-	if finalType != "" && finalType != sendType {
-		logging.Verbose("Using default type from config: %s", finalType)
-	}
 
 	// Merge tags with defaults from config
 	finalTags := mergeTagsWithDefaults(sendTags)
-	if len(finalTags) > len(sendTags) {
-		logging.Verbose("Merged with default tags from config: %v", finalTags)
-	}
+
+	logging.Debug("Notification options", "type", finalType, "tags", finalTags, "has_encryption", sendEncryptionPassword != "")
 
 	opts := &client.SendOptions{
 		Title:              title,
 		Message:            message,
-		Token:              token,
 		Type:               finalType,
 		Tags:               finalTags,
 		ImageURL:           sendImageURL,
@@ -146,13 +142,17 @@ func runSend(cmd *cobra.Command, args []string) error {
 		EncryptionPassword: sendEncryptionPassword,
 	}
 
-	logging.Verbose("Sending notification to API...")
-	result, err := c.Send(opts)
+	logging.Debug("Sending notification to API")
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	result, err := c.Send(ctx, opts)
 	if err != nil {
 		return categorizeError(err)
 	}
 
-	logging.Verbose("Notification sent successfully")
+	logging.Debug("Notification sent successfully")
 
 	// Output response
 	if sendJSON {
@@ -212,31 +212,22 @@ func parseTitleAndMessage(cmd *cobra.Command, args []string) (string, string, er
 
 // categorizeError converts a generic error into a CLI error with appropriate exit code
 func categorizeError(err error) error {
-	errStr := err.Error()
-
-	// Check for specific error patterns and categorize
-	if strings.Contains(errStr, "validation error") || strings.Contains(errStr, "tag validation") {
-		return clierrors.NewUsageError("Invalid input", err)
+	// Check for typed API errors
+	switch e := err.(type) {
+	case *clierrors.ValidationError:
+		return clierrors.NewUsageError("Invalid input", e)
+	case *clierrors.AuthenticationError:
+		return clierrors.NewUsageError("Authentication failed", fmt.Errorf("%v\n\nGet your token: Open WirePusher app → Settings → Help → Copy token\nOr set it: wirepusher config set token YOUR_TOKEN", e))
+	case *clierrors.RateLimitError:
+		return clierrors.NewAPIError("Rate limit exceeded", fmt.Errorf("%v\n\nThe send endpoint allows 30 requests per hour. Please wait before trying again.", e))
+	case *clierrors.ServerError:
+		return clierrors.NewAPIError("Server error", e)
+	case *clierrors.NetworkError:
+		return clierrors.NewSystemError("Network error", fmt.Errorf("%v\n\nPlease check your internet connection and try again.", e))
+	default:
+		// Unknown error type - treat as system error
+		return clierrors.NewSystemError("Unexpected error", err)
 	}
-
-	if strings.Contains(errStr, "authentication error") || strings.Contains(errStr, "invalid_api_token") {
-		return clierrors.NewUsageError("Authentication failed", fmt.Errorf("%v\n\nGet your token: Open WirePusher app → Settings → Help → Copy token\nOr set it: wirepusher config set token YOUR_TOKEN", err))
-	}
-
-	if strings.Contains(errStr, "rate limit exceeded") {
-		return clierrors.NewAPIError("Rate limit exceeded", fmt.Errorf("%v\n\nThe send endpoint allows 30 requests per hour. Please wait before trying again.", err))
-	}
-
-	if strings.Contains(errStr, "API error") {
-		return clierrors.NewAPIError("API request failed", err)
-	}
-
-	if strings.Contains(errStr, "request failed") || strings.Contains(errStr, "connection") {
-		return clierrors.NewSystemError("Network error", fmt.Errorf("%v\n\nPlease check your internet connection and try again.", err))
-	}
-
-	// Default to system error for unknown errors
-	return clierrors.NewSystemError("Unexpected error", err)
 }
 
 // displaySendResult formats and displays the send result in human-readable format
