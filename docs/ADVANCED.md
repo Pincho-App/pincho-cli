@@ -1,0 +1,391 @@
+# Advanced Usage
+
+This document covers advanced features of the WirePusher CLI.
+
+## Table of Contents
+
+- [Retry Logic](#retry-logic)
+- [Rate Limits](#rate-limits)
+- [Encryption](#encryption)
+- [Configuration](#configuration)
+- [Exit Codes](#exit-codes)
+- [Verbose Mode](#verbose-mode)
+
+## Retry Logic
+
+The CLI automatically retries failed requests with exponential backoff.
+
+### Retryable Errors
+
+- **Network errors**: Connection refused, timeout, EOF
+- **Server errors**: HTTP 5xx status codes
+- **Rate limits**: HTTP 429 with smart backoff
+
+### Non-Retryable Errors
+
+- **Validation errors**: HTTP 400 (invalid parameters)
+- **Authentication errors**: HTTP 401, 403 (invalid token)
+- **Not found**: HTTP 404
+
+### Backoff Strategy
+
+```
+Attempt 1: Initial backoff (1 second)
+Attempt 2: 2 seconds
+Attempt 3: 4 seconds
+Attempt 4: 8 seconds
+...
+Maximum: 30 seconds (capped)
+```
+
+For rate limit errors (429), the CLI uses:
+- `Retry-After` header value if provided by the API
+- Otherwise, starts with 5 seconds and doubles
+
+### Configuration
+
+```bash
+# Set max retries (default: 3)
+wirepusher send "Title" "Message" --max-retries 5
+
+# Disable retries
+wirepusher send "Title" "Message" --max-retries 0
+
+# Configure via environment variable
+WIREPUSHER_MAX_RETRIES=5 wirepusher send "Title" "Message"
+
+# Configure permanently
+wirepusher config set max_retries 5
+```
+
+## Rate Limits
+
+The WirePusher API enforces rate limits:
+
+- **Send endpoint**: 30 requests per hour per token
+- **NotifAI endpoint**: 50 requests per hour per token
+
+### Rate Limit Headers
+
+The API returns rate limit information in response headers:
+
+```
+RateLimit-Limit: 30
+RateLimit-Remaining: 25
+RateLimit-Reset: 2024-01-15T10:00:00Z
+```
+
+When a rate limit is hit (HTTP 429), the API provides:
+
+```
+Retry-After: 120  (seconds until reset)
+```
+
+The CLI respects the `Retry-After` header and waits appropriately.
+
+### Monitoring Rate Limits
+
+Use verbose mode to see rate limit information:
+
+```bash
+wirepusher send "Title" "Message" --verbose
+# Output includes:
+# Rate Limit: 25/30 remaining (resets at 2024-01-15T10:00:00Z)
+```
+
+### Best Practices
+
+1. **Batch notifications** when possible
+2. **Cache tokens** to avoid unnecessary auth calls
+3. **Monitor remaining requests** in CI/CD pipelines
+4. **Implement application-level queuing** for high-volume scenarios
+
+## Encryption
+
+The CLI supports AES-128-CBC encryption for message content.
+
+### How It Works
+
+1. Password is hashed using SHA-1 to derive a 16-byte key
+2. Random 16-byte IV is generated for each message
+3. Message is encrypted using AES-128-CBC with PKCS7 padding
+4. Result is encoded in custom Base64 (URL-safe: `-`, `_`, `.`)
+
+### Usage
+
+```bash
+# Encrypt message with password
+wirepusher send "Secure Alert" "Sensitive data" \
+  --encryption-password "your-secret-password" \
+  --type secure
+```
+
+### What Gets Encrypted
+
+- **Encrypted**: Message body only
+- **Not encrypted**: Title, type, tags, URLs
+
+This allows the mobile app to filter and categorize notifications while keeping the actual message content private.
+
+### Mobile App Configuration
+
+The encryption password must match the type configuration in your WirePusher mobile app:
+
+1. Open WirePusher app
+2. Go to Settings
+3. Select the notification type (e.g., "secure")
+4. Enter the same encryption password
+
+### Security Considerations
+
+- Use strong, unique passwords for each notification type
+- Store passwords securely (not in scripts or version control)
+- The SHA-1 key derivation is for compatibility with mobile app
+- Messages are encrypted end-to-end (API never sees plaintext)
+
+## Configuration
+
+### Priority Order
+
+Configuration values are resolved in this order (highest priority first):
+
+1. **Command-line flags** (`--token`, `--timeout`)
+2. **Environment variables** (`WIREPUSHER_TOKEN`, `WIREPUSHER_TIMEOUT`)
+3. **Config file** (`~/.wirepusher/config.yaml`)
+4. **Defaults** (built into the CLI)
+
+### Config File Location
+
+```bash
+# Default location
+~/.wirepusher/config.yaml
+
+# Check path
+wirepusher config list
+# Configuration from /Users/you/.wirepusher/config.yaml:
+```
+
+### Available Settings
+
+```bash
+# API token (required)
+wirepusher config set token wpt_abc123xyz
+
+# Request timeout in seconds (default: 30)
+wirepusher config set timeout 60
+
+# Max retry attempts (default: 3)
+wirepusher config set max_retries 5
+
+# Custom API URL (for testing)
+wirepusher config set api_url https://staging.api.wirepusher.dev/send
+```
+
+### Environment Variables
+
+```bash
+WIREPUSHER_TOKEN       # API token
+WIREPUSHER_TIMEOUT     # Request timeout (seconds)
+WIREPUSHER_MAX_RETRIES # Max retry attempts
+WIREPUSHER_API_URL     # Custom API endpoint
+```
+
+### Config File Format
+
+```yaml
+# ~/.wirepusher/config.yaml
+token: wpt_abc123xyz
+timeout: "60"
+max_retries: "5"
+api_url: https://api.wirepusher.dev/send
+default_type: alert
+default_tags:
+  - production
+  - automated
+```
+
+### Default Type and Tags
+
+```yaml
+# Auto-apply notification type
+default_type: alert
+
+# Auto-merge tags with explicit tags
+default_tags:
+  - automated
+  - ci-cd
+```
+
+When you run:
+```bash
+wirepusher send "Build" "Complete" --tag production
+```
+
+The notification will have tags: `["production", "automated", "ci-cd"]`
+
+## Exit Codes
+
+The CLI uses specific exit codes for CI/CD integration:
+
+| Code | Meaning | Example |
+|------|---------|---------|
+| 0 | Success | Notification sent successfully |
+| 1 | Usage error | Invalid arguments, missing token, auth failure |
+| 2 | API error | Rate limit exceeded, validation error |
+| 3 | System error | Network timeout, connection refused |
+
+### Usage in Scripts
+
+```bash
+#!/bin/bash
+wirepusher send "Deploy" "Version $VERSION deployed"
+exit_code=$?
+
+case $exit_code in
+  0)
+    echo "Notification sent"
+    ;;
+  1)
+    echo "Configuration error - check token" >&2
+    exit 1
+    ;;
+  2)
+    echo "API error - check rate limits" >&2
+    exit 2
+    ;;
+  3)
+    echo "Network error - retry later" >&2
+    exit 3
+    ;;
+esac
+```
+
+### CI/CD Pipeline Example
+
+```yaml
+# GitLab CI
+notify_success:
+  script:
+    - wirepusher send "Deploy Success" "Version $CI_COMMIT_TAG"
+  allow_failure: false  # Pipeline fails if notification fails
+
+notify_failure:
+  script:
+    - wirepusher send "Deploy Failed" "Pipeline $CI_PIPELINE_ID failed" || true
+  when: on_failure
+  allow_failure: true  # Don't double-fail
+```
+
+## Verbose Mode
+
+Enable detailed logging to debug issues:
+
+```bash
+wirepusher send "Title" "Message" --verbose
+```
+
+### Output Includes
+
+- Token (first 8 characters, masked)
+- API URL being used
+- Timeout configuration
+- Max retries setting
+- Request progress
+- Rate limit information
+- Response details
+
+### Example Output
+
+```
+[VERBOSE] Verbose logging enabled
+[VERBOSE] Using token: wpt_abc1...
+[VERBOSE] Using API URL: https://api.wirepusher.dev/send
+[VERBOSE] Using timeout: 30s
+[VERBOSE] Using max retries: 3
+[VERBOSE] Title: Deploy Complete
+[VERBOSE] Message: Version 1.2.3 deployed
+[VERBOSE] Sending notification to API...
+[VERBOSE] Notification sent successfully
+
+✓ Notification sent successfully
+
+Notification ID: notif_123456
+Title: Deploy Complete
+Message: Version 1.2.3 deployed
+Expires: 2024-01-16T10:00:00Z
+
+Rate Limit: 25/30 remaining (resets at 2024-01-15T11:00:00Z)
+```
+
+### Redirecting Output
+
+All verbose logging goes to stderr, keeping stdout clean for JSON output:
+
+```bash
+# Capture JSON, ignore verbose
+wirepusher send "Title" "Message" --json --verbose 2>/dev/null
+
+# Log verbose to file
+wirepusher send "Title" "Message" --verbose 2>debug.log
+
+# See both in terminal
+wirepusher send "Title" "Message" --verbose 2>&1 | tee log.txt
+```
+
+## Advanced Examples
+
+### Monitoring Script
+
+```bash
+#!/bin/bash
+# Monitor disk usage and alert if high
+
+THRESHOLD=90
+USAGE=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
+
+if [ "$USAGE" -gt "$THRESHOLD" ]; then
+  wirepusher send \
+    "Disk Alert" \
+    "Disk usage at ${USAGE}% on $(hostname)" \
+    --type alert \
+    --tag monitoring \
+    --tag disk-space
+fi
+```
+
+### Build Notification
+
+```bash
+#!/bin/bash
+# Notify on build completion
+
+if make build; then
+  wirepusher send \
+    "Build Success" \
+    "$(git rev-parse --short HEAD) built successfully" \
+    --tag build \
+    --tag success
+else
+  wirepusher send \
+    "Build Failed" \
+    "Build failed for $(git rev-parse --short HEAD)" \
+    --type alert \
+    --tag build \
+    --tag failure
+  exit 1
+fi
+```
+
+### Encrypted Status Report
+
+```bash
+#!/bin/bash
+# Send encrypted system status
+
+STATUS=$(top -l 1 | head -10)
+wirepusher send \
+  "System Status" \
+  "$STATUS" \
+  --encryption-password "$ENCRYPTION_KEY" \
+  --type secure
+```

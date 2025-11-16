@@ -34,14 +34,17 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"gitlab.com/wirepusher/cli/pkg/crypto"
+	"gitlab.com/wirepusher/cli/pkg/errors"
 	"gitlab.com/wirepusher/cli/pkg/validation"
 )
 
@@ -60,6 +63,9 @@ const (
 
 	// DefaultInitialBackoff is the default initial backoff duration for retries
 	DefaultInitialBackoff = 1 * time.Second
+
+	// Version is the client library version (can be overridden)
+	Version = "1.0.0"
 )
 
 // Client represents a WirePusher API client
@@ -69,13 +75,14 @@ type Client struct {
 	Timeout        time.Duration // Custom timeout duration (uses DefaultTimeout if zero)
 	MaxRetries     int           // Maximum number of retry attempts (uses DefaultMaxRetries if zero)
 	InitialBackoff time.Duration // Initial backoff duration for retries (uses DefaultInitialBackoff if zero)
+	Token          string        // API token for authentication (sent as Bearer token in Authorization header)
+	UserAgent      string        // User-Agent header value (defaults to wirepusher-cli/{version})
 }
 
 // SendOptions contains parameters for sending a notification
 type SendOptions struct {
 	Title              string   `json:"title"`
 	Message            string   `json:"message"`
-	Token              string   `json:"token,omitempty"`
 	Type               string   `json:"type,omitempty"`
 	Tags               []string `json:"tags,omitempty"`
 	ImageURL           string   `json:"imageURL,omitempty"`
@@ -127,9 +134,8 @@ type SendResult struct {
 
 // NotifAIOptions contains parameters for sending a NotifAI request
 type NotifAIOptions struct {
-	Text  string `json:"text"`
-	Token string `json:"token,omitempty"`
-	Type  string `json:"type,omitempty"`
+	Text string `json:"text"`
+	Type string `json:"type,omitempty"`
 }
 
 // NotifAIResponse represents the NotifAI API response
@@ -178,6 +184,7 @@ func New() *Client {
 		Timeout:        DefaultTimeout,
 		MaxRetries:     DefaultMaxRetries,
 		InitialBackoff: DefaultInitialBackoff,
+		UserAgent:      fmt.Sprintf("wirepusher-cli/%s", Version),
 		HTTPClient: &http.Client{
 			Timeout: DefaultTimeout,
 		},
@@ -190,6 +197,11 @@ func (c *Client) SetTimeout(timeout time.Duration) {
 		c.Timeout = timeout
 		c.HTTPClient.Timeout = timeout
 	}
+}
+
+// SetToken sets the API token for authentication
+func (c *Client) SetToken(token string) {
+	c.Token = token
 }
 
 // SetRetryConfig updates the client's retry configuration
@@ -208,9 +220,13 @@ func isRetryableError(err error, statusCode int) bool {
 		return false
 	}
 
-	errStr := err.Error()
+	// Check if error implements APIError with IsRetryable method
+	if errors.IsRetryableError(err) {
+		return true
+	}
 
-	// Retry on network errors
+	// Check error string for network errors (wrapped errors may not implement APIError)
+	errStr := err.Error()
 	if strings.Contains(errStr, "connection refused") ||
 		strings.Contains(errStr, "connection reset") ||
 		strings.Contains(errStr, "timeout") ||
@@ -233,7 +249,21 @@ func isRetryableError(err error, statusCode int) bool {
 }
 
 // calculateBackoff calculates the backoff duration for a given attempt using exponential backoff
-func (c *Client) calculateBackoff(attempt int, statusCode int) time.Duration {
+// If retryAfter is provided (from Retry-After header), it takes precedence for rate limit errors
+func (c *Client) calculateBackoff(attempt int, statusCode int, retryAfter string) time.Duration {
+	// If Retry-After header is provided for rate limit errors, use it
+	if statusCode == 429 && retryAfter != "" {
+		// Try to parse as seconds
+		if seconds, err := strconv.Atoi(retryAfter); err == nil && seconds > 0 {
+			backoff := time.Duration(seconds) * time.Second
+			// Cap at 30 seconds
+			if backoff > 30*time.Second {
+				backoff = 30 * time.Second
+			}
+			return backoff
+		}
+	}
+
 	baseBackoff := c.InitialBackoff
 	if baseBackoff == 0 {
 		baseBackoff = DefaultInitialBackoff
@@ -256,7 +286,7 @@ func (c *Client) calculateBackoff(attempt int, statusCode int) time.Duration {
 }
 
 // doRequestWithRetry performs an HTTP request with retry logic
-func (c *Client) doRequestWithRetry(req *http.Request) (*http.Response, error) {
+func (c *Client) doRequestWithRetry(ctx context.Context, req *http.Request) (*http.Response, error) {
 	maxRetries := c.MaxRetries
 	if maxRetries == 0 {
 		maxRetries = DefaultMaxRetries
@@ -264,16 +294,24 @@ func (c *Client) doRequestWithRetry(req *http.Request) (*http.Response, error) {
 
 	var lastErr error
 	var lastStatusCode int
+	var lastRetryAfter string
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
+		// Check for context cancellation before each attempt
+		select {
+		case <-ctx.Done():
+			return nil, errors.NewNetworkError("request cancelled", ctx.Err())
+		default:
+		}
+
 		// Clone the request for retry (body needs to be reset)
-		reqClone := req.Clone(req.Context())
+		reqClone := req.Clone(ctx)
 		if req.Body != nil {
 			// For POST requests, we need to reset the body
 			if req.GetBody != nil {
 				body, err := req.GetBody()
 				if err != nil {
-					return nil, fmt.Errorf("failed to reset request body: %w", err)
+					return nil, errors.NewNetworkError("failed to reset request body", err)
 				}
 				reqClone.Body = body
 			}
@@ -291,6 +329,8 @@ func (c *Client) doRequestWithRetry(req *http.Request) (*http.Response, error) {
 		lastErr = err
 		if resp != nil {
 			lastStatusCode = resp.StatusCode
+			// Extract Retry-After header for rate limit responses
+			lastRetryAfter = resp.Header.Get("Retry-After")
 		}
 
 		// Check if error is retryable
@@ -306,37 +346,43 @@ func (c *Client) doRequestWithRetry(req *http.Request) (*http.Response, error) {
 
 		// Don't sleep after the last attempt
 		if attempt < maxRetries {
-			backoff := c.calculateBackoff(attempt, lastStatusCode)
-			time.Sleep(backoff)
+			backoff := c.calculateBackoff(attempt, lastStatusCode, lastRetryAfter)
+			// Use select to respect context cancellation during sleep
+			select {
+			case <-ctx.Done():
+				return nil, errors.NewNetworkError("request cancelled during retry backoff", ctx.Err())
+			case <-time.After(backoff):
+				// Continue with next retry attempt
+			}
 		}
 	}
 
 	// All retries exhausted
 	if lastErr != nil {
-		return nil, fmt.Errorf("request failed after %d retries: %w", maxRetries, lastErr)
+		return nil, errors.NewNetworkError(fmt.Sprintf("request failed after %d retries", maxRetries), lastErr)
 	}
 
 	// This shouldn't happen, but just in case
-	return nil, fmt.Errorf("request failed after %d retries with status %d", maxRetries, lastStatusCode)
+	return nil, errors.NewServerErrorWithStatus(fmt.Sprintf("request failed after %d retries", maxRetries), lastStatusCode)
 }
 
 // Send sends a notification via the WirePusher v1 API
 // Returns SendResult with response details and rate limit info, or error if failed
-func (c *Client) Send(opts *SendOptions) (*SendResult, error) {
+func (c *Client) Send(ctx context.Context, opts *SendOptions) (*SendResult, error) {
 	// Validate required fields
 	if opts.Title == "" {
-		return nil, fmt.Errorf("title is required")
+		return nil, errors.NewValidationError("title is required")
 	}
 
-	if opts.Token == "" {
-		return nil, fmt.Errorf("token is required")
+	if c.Token == "" {
+		return nil, errors.NewAuthenticationError("token is required")
 	}
 
 	// Normalize and validate tags
 	if len(opts.Tags) > 0 {
 		normalizedTags, err := validation.NormalizeAndValidateTags(opts.Tags)
 		if err != nil {
-			return nil, fmt.Errorf("tag validation failed: %w", err)
+			return nil, errors.NewValidationErrorWithDetails(fmt.Sprintf("tag validation failed: %v", err), "tags", "invalid_tags")
 		}
 		opts.Tags = normalizedTags
 	}
@@ -350,12 +396,12 @@ func (c *Client) Send(opts *SendOptions) (*SendResult, error) {
 		if opts.Message != "" {
 			ivBytes, ivHexStr, err := crypto.GenerateIV()
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate IV: %w", err)
+				return nil, errors.NewNetworkError("failed to generate IV", err)
 			}
 
 			encrypted, err := crypto.EncryptMessage(opts.Message, opts.EncryptionPassword, ivBytes)
 			if err != nil {
-				return nil, fmt.Errorf("failed to encrypt message: %w", err)
+				return nil, errors.NewNetworkError("failed to encrypt message", err)
 			}
 
 			finalMessage = encrypted
@@ -372,13 +418,13 @@ func (c *Client) Send(opts *SendOptions) (*SendResult, error) {
 	// Build request body
 	jsonData, err := json.Marshal(requestOpts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
+		return nil, errors.NewNetworkError("failed to marshal request", err)
 	}
 
-	// Create HTTP request with GetBody for retries
-	req, err := http.NewRequest("POST", c.APIURL, bytes.NewReader(jsonData))
+	// Create HTTP request with context
+	req, err := http.NewRequestWithContext(ctx, "POST", c.APIURL, bytes.NewReader(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, errors.NewNetworkError("failed to create request", err)
 	}
 
 	// Set GetBody for retry support
@@ -387,9 +433,11 @@ func (c *Client) Send(opts *SendOptions) (*SendResult, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
+	req.Header.Set("User-Agent", c.UserAgent)
 
 	// Send request with retry logic
-	resp, err := c.doRequestWithRetry(req)
+	resp, err := c.doRequestWithRetry(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +453,7 @@ func (c *Client) Send(opts *SendOptions) (*SendResult, error) {
 	// Read response body
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return nil, errors.NewNetworkError("failed to read response", err)
 	}
 
 	// Handle error status codes
@@ -413,38 +461,51 @@ func (c *Client) Send(opts *SendOptions) (*SendResult, error) {
 		// Try to parse nested error response
 		var errorResp ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &errorResp); err == nil && errorResp.Error.Message != "" {
-			// Format error message with details
-			errorMsg := errorResp.Error.Message
-			if errorResp.Error.Param != "" {
-				errorMsg = fmt.Sprintf("%s (parameter: %s)", errorMsg, errorResp.Error.Param)
+			// Return typed error based on status code
+			switch resp.StatusCode {
+			case 400, 404:
+				return nil, errors.NewValidationErrorWithDetails(errorResp.Error.Message, errorResp.Error.Param, errorResp.Error.Code)
+			case 401, 403:
+				return nil, errors.NewAuthenticationErrorWithStatus(errorResp.Error.Message, resp.StatusCode)
+			case 429:
+				retryAfter := 0
+				if retryAfterStr := resp.Header.Get("Retry-After"); retryAfterStr != "" {
+					retryAfter, _ = strconv.Atoi(retryAfterStr)
+				}
+				return nil, errors.NewRateLimitErrorWithRetryAfter(errorResp.Error.Message, retryAfter)
+			default:
+				if resp.StatusCode >= 500 {
+					return nil, errors.NewServerErrorWithStatus(errorResp.Error.Message, resp.StatusCode)
+				}
+				return nil, errors.NewValidationErrorWithDetails(errorResp.Error.Message, errorResp.Error.Param, errorResp.Error.Code)
 			}
-
-			// Add error code if available
-			if errorResp.Error.Code != "" {
-				errorMsg = fmt.Sprintf("%s [%s]", errorMsg, errorResp.Error.Code)
-			}
-
-			return nil, fmt.Errorf("%s", errorMsg)
 		}
 
 		// Fallback to generic error message if parsing fails
 		errorMsg := string(bodyBytes)
 		switch resp.StatusCode {
-		case 400:
-			return nil, fmt.Errorf("validation error: %s", errorMsg)
+		case 400, 404:
+			return nil, errors.NewValidationError(fmt.Sprintf("validation error: %s", errorMsg))
 		case 401, 403:
-			return nil, fmt.Errorf("authentication error: %s (check your token)", errorMsg)
+			return nil, errors.NewAuthenticationErrorWithStatus(fmt.Sprintf("authentication error: %s", errorMsg), resp.StatusCode)
 		case 429:
-			return nil, fmt.Errorf("rate limit exceeded: %s", errorMsg)
+			retryAfter := 0
+			if retryAfterStr := resp.Header.Get("Retry-After"); retryAfterStr != "" {
+				retryAfter, _ = strconv.Atoi(retryAfterStr)
+			}
+			return nil, errors.NewRateLimitErrorWithRetryAfter(fmt.Sprintf("rate limit exceeded: %s", errorMsg), retryAfter)
 		default:
-			return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, errorMsg)
+			if resp.StatusCode >= 500 {
+				return nil, errors.NewServerErrorWithStatus(fmt.Sprintf("server error: %s", errorMsg), resp.StatusCode)
+			}
+			return nil, errors.NewValidationError(fmt.Sprintf("API error (%d): %s", resp.StatusCode, errorMsg))
 		}
 	}
 
 	// Parse success response
 	var apiResp SendResponse
 	if err := json.Unmarshal(bodyBytes, &apiResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
+		return nil, errors.NewNetworkError("failed to parse response", err)
 	}
 
 	return &SendResult{
@@ -455,28 +516,28 @@ func (c *Client) Send(opts *SendOptions) (*SendResult, error) {
 
 // NotifAI sends a text-to-notification request via the WirePusher NotifAI API
 // Returns NotifAIResult with response details and rate limit info, or error if failed
-func (c *Client) NotifAI(opts *NotifAIOptions) (*NotifAIResult, error) {
+func (c *Client) NotifAI(ctx context.Context, opts *NotifAIOptions) (*NotifAIResult, error) {
 	// Validate required fields
 	if opts.Text == "" {
-		return nil, fmt.Errorf("text is required")
+		return nil, errors.NewValidationError("text is required")
 	}
 
-	if opts.Token == "" {
-		return nil, fmt.Errorf("token is required")
+	if c.Token == "" {
+		return nil, errors.NewAuthenticationError("token is required")
 	}
 
 	// Validate text length
 	if len(opts.Text) < 5 {
-		return nil, fmt.Errorf("text must be at least 5 characters long")
+		return nil, errors.NewValidationError("text must be at least 5 characters long")
 	}
 	if len(opts.Text) > 2500 {
-		return nil, fmt.Errorf("text must be at most 2500 characters long")
+		return nil, errors.NewValidationError("text must be at most 2500 characters long")
 	}
 
 	// Build request body
 	jsonData, err := json.Marshal(opts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
+		return nil, errors.NewNetworkError("failed to marshal request", err)
 	}
 
 	// Determine NotifAI URL based on configured API URL
@@ -487,10 +548,10 @@ func (c *Client) NotifAI(opts *NotifAIOptions) (*NotifAIResult, error) {
 		notifaiURL = strings.Replace(c.APIURL, "/send", "/notifai", 1)
 	}
 
-	// Create HTTP request with GetBody for retries
-	req, err := http.NewRequest("POST", notifaiURL, bytes.NewReader(jsonData))
+	// Create HTTP request with context
+	req, err := http.NewRequestWithContext(ctx, "POST", notifaiURL, bytes.NewReader(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, errors.NewNetworkError("failed to create request", err)
 	}
 
 	// Set GetBody for retry support
@@ -499,9 +560,11 @@ func (c *Client) NotifAI(opts *NotifAIOptions) (*NotifAIResult, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
+	req.Header.Set("User-Agent", c.UserAgent)
 
 	// Send request with retry logic
-	resp, err := c.doRequestWithRetry(req)
+	resp, err := c.doRequestWithRetry(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +580,7 @@ func (c *Client) NotifAI(opts *NotifAIOptions) (*NotifAIResult, error) {
 	// Read response body
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return nil, errors.NewNetworkError("failed to read response", err)
 	}
 
 	// Handle error status codes
@@ -525,38 +588,51 @@ func (c *Client) NotifAI(opts *NotifAIOptions) (*NotifAIResult, error) {
 		// Try to parse nested error response
 		var errorResp ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &errorResp); err == nil && errorResp.Error.Message != "" {
-			// Format error message with details
-			errorMsg := errorResp.Error.Message
-			if errorResp.Error.Param != "" {
-				errorMsg = fmt.Sprintf("%s (parameter: %s)", errorMsg, errorResp.Error.Param)
+			// Return typed error based on status code
+			switch resp.StatusCode {
+			case 400, 404:
+				return nil, errors.NewValidationErrorWithDetails(errorResp.Error.Message, errorResp.Error.Param, errorResp.Error.Code)
+			case 401, 403:
+				return nil, errors.NewAuthenticationErrorWithStatus(errorResp.Error.Message, resp.StatusCode)
+			case 429:
+				retryAfter := 0
+				if retryAfterStr := resp.Header.Get("Retry-After"); retryAfterStr != "" {
+					retryAfter, _ = strconv.Atoi(retryAfterStr)
+				}
+				return nil, errors.NewRateLimitErrorWithRetryAfter(errorResp.Error.Message, retryAfter)
+			default:
+				if resp.StatusCode >= 500 {
+					return nil, errors.NewServerErrorWithStatus(errorResp.Error.Message, resp.StatusCode)
+				}
+				return nil, errors.NewValidationErrorWithDetails(errorResp.Error.Message, errorResp.Error.Param, errorResp.Error.Code)
 			}
-
-			// Add error code if available
-			if errorResp.Error.Code != "" {
-				errorMsg = fmt.Sprintf("%s [%s]", errorMsg, errorResp.Error.Code)
-			}
-
-			return nil, fmt.Errorf("%s", errorMsg)
 		}
 
 		// Fallback to generic error message if parsing fails
 		errorMsg := string(bodyBytes)
 		switch resp.StatusCode {
-		case 400:
-			return nil, fmt.Errorf("validation error: %s", errorMsg)
+		case 400, 404:
+			return nil, errors.NewValidationError(fmt.Sprintf("validation error: %s", errorMsg))
 		case 401, 403:
-			return nil, fmt.Errorf("authentication error: %s (check your token)", errorMsg)
+			return nil, errors.NewAuthenticationErrorWithStatus(fmt.Sprintf("authentication error: %s", errorMsg), resp.StatusCode)
 		case 429:
-			return nil, fmt.Errorf("rate limit exceeded: %s", errorMsg)
+			retryAfter := 0
+			if retryAfterStr := resp.Header.Get("Retry-After"); retryAfterStr != "" {
+				retryAfter, _ = strconv.Atoi(retryAfterStr)
+			}
+			return nil, errors.NewRateLimitErrorWithRetryAfter(fmt.Sprintf("rate limit exceeded: %s", errorMsg), retryAfter)
 		default:
-			return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, errorMsg)
+			if resp.StatusCode >= 500 {
+				return nil, errors.NewServerErrorWithStatus(fmt.Sprintf("server error: %s", errorMsg), resp.StatusCode)
+			}
+			return nil, errors.NewValidationError(fmt.Sprintf("API error (%d): %s", resp.StatusCode, errorMsg))
 		}
 	}
 
 	// Parse success response
 	var apiResp NotifAIResponse
 	if err := json.Unmarshal(bodyBytes, &apiResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
+		return nil, errors.NewNetworkError("failed to parse response", err)
 	}
 
 	return &NotifAIResult{

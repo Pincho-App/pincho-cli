@@ -58,8 +58,8 @@ API Reference: https://wirepusher.com/docs`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Enable verbose logging if flag is set
 		if verbose, _ := cmd.Flags().GetBool("verbose"); verbose {
-			logging.VerboseEnabled = true
-			logging.Verbose("Verbose logging enabled")
+			logging.SetVerbose(true)
+			logging.Debug("Verbose logging enabled")
 		}
 	},
 }
