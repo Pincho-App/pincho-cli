@@ -36,10 +36,10 @@ steps:
       - '-c'
       - |
         echo "=== Checking code formatting ==="
-        UNFORMATTED=$(gofmt -l .)
-        if [ -n "$UNFORMATTED" ]; then
+        UNFORMATTED=$$(gofmt -l .)
+        if [ -n "$$UNFORMATTED" ]; then
           echo "❌ The following files are not formatted:"
-          echo "$UNFORMATTED"
+          echo "$$UNFORMATTED"
           echo ""
           echo "Run 'gofmt -w .' to fix formatting"
           exit 1
