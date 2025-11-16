@@ -27,18 +27,39 @@ Pick whichever fits your workflow.
 
 ## Installation
 
+### Quick Install (Recommended)
+
+```bash
+curl -sSL https://gitlab.com/wirepusher/wirepusher-cli/-/raw/main/install.sh | sh
+```
+
+This automatically detects your OS and architecture, downloads the latest release, and installs to `/usr/local/bin`.
+
+### Manual Install
+
 Download the binary for your platform from [Releases](https://gitlab.com/wirepusher/wirepusher-cli/-/releases):
 
 ```bash
-# Linux
-curl -LO https://gitlab.com/wirepusher/wirepusher-cli/-/releases/latest/downloads/wirepusher-linux-amd64
-chmod +x wirepusher-linux-amd64
-sudo mv wirepusher-linux-amd64 /usr/local/bin/wirepusher
+# Linux (amd64)
+curl -LO https://gitlab.com/wirepusher/wirepusher-cli/-/releases/v1.0.0/downloads/wirepusher_1.0.0_linux_amd64.tar.gz
+tar -xzf wirepusher_1.0.0_linux_amd64.tar.gz
+sudo mv wirepusher /usr/local/bin/
 
 # macOS (Apple Silicon)
-curl -LO https://gitlab.com/wirepusher/wirepusher-cli/-/releases/latest/downloads/wirepusher-darwin-arm64
-chmod +x wirepusher-darwin-arm64
-sudo mv wirepusher-darwin-arm64 /usr/local/bin/wirepusher
+curl -LO https://gitlab.com/wirepusher/wirepusher-cli/-/releases/v1.0.0/downloads/wirepusher_1.0.0_darwin_arm64.tar.gz
+tar -xzf wirepusher_1.0.0_darwin_arm64.tar.gz
+sudo mv wirepusher /usr/local/bin/
+
+# Windows (PowerShell)
+Invoke-WebRequest -Uri "https://gitlab.com/wirepusher/wirepusher-cli/-/releases/v1.0.0/downloads/wirepusher_1.0.0_windows_amd64.zip" -OutFile wirepusher.zip
+Expand-Archive wirepusher.zip
+Move-Item wirepusher\wirepusher.exe C:\Windows\System32\
+```
+
+### Uninstall
+
+```bash
+curl -sSL https://gitlab.com/wirepusher/wirepusher-cli/-/raw/main/uninstall.sh | sh
 ```
 
 ## Common Use Cases
