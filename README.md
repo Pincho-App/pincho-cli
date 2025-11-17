@@ -39,20 +39,21 @@ This automatically detects your OS and architecture, downloads the latest releas
 
 Download the binary for your platform from [Releases](https://gitlab.com/wirepusher/wirepusher-cli/-/releases):
 
-```bash
-# Linux (amd64)
-curl -LO https://gitlab.com/wirepusher/wirepusher-cli/-/releases/v1.0.0/downloads/wirepusher_1.0.0_linux_amd64.tar.gz
-tar -xzf wirepusher_1.0.0_linux_amd64.tar.gz
-sudo mv wirepusher /usr/local/bin/
+1. Go to the [Releases page](https://gitlab.com/wirepusher/wirepusher-cli/-/releases)
+2. Download the archive for your platform:
+   - Linux: `wirepusher_X.Y.Z_linux_amd64.tar.gz`
+   - macOS Intel: `wirepusher_X.Y.Z_darwin_amd64.tar.gz`
+   - macOS Apple Silicon: `wirepusher_X.Y.Z_darwin_arm64.tar.gz`
+   - Windows: `wirepusher_X.Y.Z_windows_amd64.zip`
+3. Extract and install:
 
-# macOS (Apple Silicon)
-curl -LO https://gitlab.com/wirepusher/wirepusher-cli/-/releases/v1.0.0/downloads/wirepusher_1.0.0_darwin_arm64.tar.gz
-tar -xzf wirepusher_1.0.0_darwin_arm64.tar.gz
+```bash
+# Linux/macOS
+tar -xzf wirepusher_*.tar.gz
 sudo mv wirepusher /usr/local/bin/
 
 # Windows (PowerShell)
-Invoke-WebRequest -Uri "https://gitlab.com/wirepusher/wirepusher-cli/-/releases/v1.0.0/downloads/wirepusher_1.0.0_windows_amd64.zip" -OutFile wirepusher.zip
-Expand-Archive wirepusher.zip
+Expand-Archive wirepusher_*.zip
 Move-Item wirepusher\wirepusher.exe C:\Windows\System32\
 ```
 

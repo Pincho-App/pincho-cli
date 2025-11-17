@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"gitlab.com/wirepusher/cli/pkg/client"
@@ -240,8 +241,9 @@ func displayNotifAIResult(result *client.NotifAIResult) {
 		// Personal token result
 		notif := result.Response.ReceivedNotification
 		fmt.Printf("Notification ID: %s\n", notif.NotificationID)
-		if notif.ExpiresAt != "" {
-			fmt.Printf("Expires: %s\n", notif.ExpiresAt)
+		if notif.ExpiresAt.Seconds > 0 {
+			expiresTime := time.Unix(notif.ExpiresAt.Seconds, notif.ExpiresAt.Nanoseconds)
+			fmt.Printf("Expires: %s\n", expiresTime.Format(time.RFC3339))
 		}
 	}
 

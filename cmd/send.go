@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"gitlab.com/wirepusher/cli/pkg/client"
@@ -254,8 +255,9 @@ func displaySendResult(result *client.SendResult) {
 		if len(notif.Tags) > 0 {
 			fmt.Printf("Tags: %s\n", strings.Join(notif.Tags, ", "))
 		}
-		if notif.ExpiresAt != "" {
-			fmt.Printf("Expires: %s\n", notif.ExpiresAt)
+		if notif.ExpiresAt.Seconds > 0 {
+			expiresTime := time.Unix(notif.ExpiresAt.Seconds, notif.ExpiresAt.Nanoseconds)
+			fmt.Printf("Expires: %s\n", expiresTime.Format(time.RFC3339))
 		}
 	}
 

@@ -101,22 +101,28 @@ type SendResponse struct {
 	Notifications        []NotificationDetails `json:"notifications,omitempty"`        // For team tokens
 }
 
+// FirestoreTimestamp represents a Firestore timestamp object returned by the API
+type FirestoreTimestamp struct {
+	Seconds     int64 `json:"_seconds"`
+	Nanoseconds int64 `json:"_nanoseconds"`
+}
+
 // NotificationDetails represents a single notification object from the API
 type NotificationDetails struct {
-	NotificationID string   `json:"notificationID"`
-	UserID         string   `json:"userID"`
-	Title          string   `json:"title"`
-	Body           string   `json:"body"`
-	Type           string   `json:"type"`
-	ImageURL       string   `json:"imageURL,omitempty"`
-	ActionURL      string   `json:"actionURL,omitempty"`
-	Timestamp      string   `json:"timestamp"`
-	Tags           []string `json:"tags,omitempty"`
-	TeamID         string   `json:"teamId,omitempty"`
-	TeamName       string   `json:"teamName,omitempty"`
-	Endpoint       string   `json:"endpoint"`
-	IV             string   `json:"iv,omitempty"`
-	ExpiresAt      string   `json:"expiresAt"`
+	NotificationID string             `json:"notificationID"`
+	UserID         string             `json:"userID"`
+	Title          string             `json:"title"`
+	Body           string             `json:"body"`
+	Type           string             `json:"type"`
+	ImageURL       string             `json:"imageURL,omitempty"`
+	ActionURL      string             `json:"actionURL,omitempty"`
+	Timestamp      string             `json:"timestamp"`
+	Tags           []string           `json:"tags,omitempty"`
+	TeamID         string             `json:"teamId,omitempty"`
+	TeamName       string             `json:"teamName,omitempty"`
+	Endpoint       string             `json:"endpoint"`
+	IV             string             `json:"iv,omitempty"`
+	ExpiresAt      FirestoreTimestamp `json:"expiresAt"`
 }
 
 // RateLimitInfo contains rate limiting information from response headers
