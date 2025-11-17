@@ -177,9 +177,15 @@ steps:
         test -f .goreleaser.yml && echo "✓ .goreleaser.yml exists" || (echo "❌ .goreleaser.yml missing" && exit 1)
 
         echo ""
+        echo "=== Fetching git tags ==="
+        # Cloud Build does shallow clone without tags, GoReleaser needs them
+        git fetch --tags --unshallow 2>/dev/null || git fetch --tags
+        echo "✓ Git tags fetched"
+
+        echo ""
         echo "=== Running GoReleaser ==="
         export GITLAB_TOKEN="$$GITLAB_TOKEN"
-        goreleaser release --clean
+        goreleaser release --clean || exit 1
 
         echo ""
         echo "✓ Release $TAG_NAME published successfully to GitLab"
