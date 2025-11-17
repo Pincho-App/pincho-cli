@@ -4,12 +4,133 @@ This document covers advanced features of the WirePusher CLI.
 
 ## Table of Contents
 
+- [Commands Reference](#commands-reference)
+- [Validation Philosophy](#validation-philosophy)
 - [Retry Logic](#retry-logic)
 - [Rate Limits](#rate-limits)
 - [Encryption](#encryption)
 - [Configuration](#configuration)
 - [Exit Codes](#exit-codes)
 - [Verbose Mode](#verbose-mode)
+- [Advanced Examples](#advanced-examples)
+- [Building from Source](#building-from-source)
+- [Testing](#testing)
+
+## Commands Reference
+
+### send
+
+```bash
+wirepusher send <title> [message] [flags]
+```
+
+**Flags:**
+- `--type string` - Notification type (deploy, alert, etc.)
+- `--tag strings` - Tags (repeatable, max 10)
+- `--image-url string` - Image URL
+- `--action-url string` - Action URL (opens on tap)
+- `--encryption-password string` - Encrypt message with AES-128-CBC
+- `--stdin` - Read message from stdin
+- `--json` - JSON output format
+- `--timeout int` - Request timeout in seconds (default: 30)
+- `--max-retries int` - Max retries (default: 3)
+- `--verbose` - Debug output
+- `--token string` - API token (overrides config)
+
+**Examples:**
+```bash
+wirepusher send "Deploy" "v1.2.3 deployed"
+wirepusher send "Alert" "CPU high" --type alert --tag production
+wirepusher send "Secure" "Encrypted" --encryption-password "secret"
+echo "Output" | wirepusher send "Logs" --stdin
+wirepusher send "Deploy" --json  # Machine-readable output
+```
+
+### notifai
+
+AI-powered notifications using Gemini:
+
+```bash
+wirepusher notifai <text> [flags]
+```
+
+**Flags:**
+- `--type string` - Override AI-generated type
+- `--stdin` - Read text from stdin
+- `--json` - JSON output format
+- `--timeout int` - Request timeout (default: 30)
+- `--max-retries int` - Max retries (default: 3)
+- `--verbose` - Debug output
+- `--token string` - API token
+
+**Examples:**
+```bash
+wirepusher notifai "deployment finished, v2.1.3 is live on prod"
+wirepusher notifai "cpu at 95% on web-3" --type alert
+cat log.txt | wirepusher notifai --stdin
+```
+
+### config
+
+Manage persistent configuration:
+
+```bash
+wirepusher config set <key> <value>
+wirepusher config get <key>
+wirepusher config list
+```
+
+**Supported keys:**
+
+| Key | Description | Example |
+|-----|-------------|---------|
+| `token` | API token | `wirepusher config set token abc123` |
+| `api_url` | Custom API endpoint | `wirepusher config set api_url https://custom.com/send` |
+| `timeout` | Request timeout (seconds) | `wirepusher config set timeout 60` |
+| `max_retries` | Max retry attempts | `wirepusher config set max_retries 5` |
+| `default_type` | Default notification type | `wirepusher config set default_type deploy` |
+
+**Note:** `default_tags` must be set directly in `~/.wirepusher/config.yaml` (YAML array):
+
+```yaml
+default_tags:
+  - production
+  - automated
+```
+
+### version
+
+```bash
+wirepusher version
+```
+
+Shows version, commit hash, and build date.
+
+## Validation Philosophy
+
+The CLI validates **more strictly** than library clients to provide immediate user feedback.
+
+### What CLI Validates
+
+- **Required parameters**: Title and token must be present
+- **Tag limits**: Max 10 tags, 50 characters each
+- **Tag format**: Alphanumeric, hyphens, underscores only
+- **Immediate feedback**: Errors shown before API call
+
+### What CLI Normalizes
+
+- **Tags**: Lowercase conversion, whitespace trimming, deduplication
+- **Automatic**: No extra flags needed
+
+### Why Stricter Validation?
+
+CLI serves interactive users who benefit from fast-fail:
+- Saves API quota by catching errors locally
+- Clear error messages with actionable guidance
+- No surprise failures after network round-trip
+- Matches documented API limits upfront
+
+**Note:** WirePusher libraries (Go, Python, JS) perform minimal validation and let the API be the source of truth. This is intentional - CLI serves interactive users, libraries serve programmatic integrations.
 
 ## Retry Logic
 
@@ -389,3 +510,28 @@ wirepusher send \
   --encryption-password "$ENCRYPTION_KEY" \
   --type secure
 ```
+
+## Building from Source
+
+```bash
+git clone https://gitlab.com/wirepusher/wirepusher-cli.git
+cd wirepusher-cli
+go build -o wirepusher
+```
+
+With version info:
+```bash
+go build -ldflags="-X 'gitlab.com/wirepusher/cli/cmd.version=1.0.0'" -o wirepusher
+```
+
+## Testing
+
+```bash
+go test ./...              # Run all tests
+go test ./... -cover       # With coverage
+go test ./... -v -race     # Verbose with race detection
+```
+
+Current coverage targets:
+- Overall: 30% minimum
+- pkg/ layer: 55% minimum (validation: 100%, crypto: 88%, config: 71%)
