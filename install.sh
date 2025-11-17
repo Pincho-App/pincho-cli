@@ -7,6 +7,7 @@ set -e
 REPO="wirepusher/wirepusher-cli"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 BINARY_NAME="wirepusher"
+PROJECT_NAME="wirepusher-cli"  # Name used in archive files
 
 # Colors for output
 RED='\033[0;31m'
@@ -96,9 +97,9 @@ main() {
     VERSION_NUM=$(echo "$VERSION" | sed 's/^v//')
 
     if [ "$OS" = "windows" ]; then
-        ARCHIVE_NAME="${BINARY_NAME}_${VERSION_NUM}_${OS}_${ARCH}.zip"
+        ARCHIVE_NAME="${PROJECT_NAME}_${VERSION_NUM}_${OS}_${ARCH}.zip"
     else
-        ARCHIVE_NAME="${BINARY_NAME}_${VERSION_NUM}_${OS}_${ARCH}.tar.gz"
+        ARCHIVE_NAME="${PROJECT_NAME}_${VERSION_NUM}_${OS}_${ARCH}.tar.gz"
     fi
 
     DOWNLOAD_URL="https://gitlab.com/${REPO}/-/releases/${VERSION}/downloads/${ARCHIVE_NAME}"
