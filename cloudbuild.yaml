@@ -204,7 +204,8 @@ steps:
           -H "Authorization: Bearer $$WIREPUSHER_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{
-            \"text\": \"WirePusher CLI $TAG_NAME released successfully to GitLab. 7 platform binaries available for download. Install via curl -sSL install script or download from https://gitlab.com/wirepusher/wirepusher-cli/-/releases/$TAG_NAME\"
+            \"text\": \"WirePusher CLI $TAG_NAME released successfully to GitLab. 7 platform binaries available for download. Install via curl -sSL install script or download from https://gitlab.com/wirepusher/wirepusher-cli/-/releases/$TAG_NAME\",
+            \"type\": \"release\"
           }"
 
         echo ""
