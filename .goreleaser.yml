@@ -48,9 +48,9 @@ archives:
       - LICENSE
       - README.md
       - CHANGELOG.md
-      - CODE_OF_CONDUCT.md
       - CONTRIBUTING.md
-      - SECURITY.md
+      - docs/CODE_OF_CONDUCT.md
+      - docs/SECURITY.md
       - examples/*
 
 checksum:
