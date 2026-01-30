@@ -1,4 +1,4 @@
-.PHONY: build build-all test clean install help setup lint
+.PHONY: build build-all test clean install help
 
 # Variables
 BINARY_NAME=pincho
@@ -49,30 +49,14 @@ install: build
 	sudo mv $(BINARY_NAME) /usr/local/bin/
 	@echo "Done! Run 'pincho --help' to get started"
 
-# Setup development environment (git hooks)
-setup:
-	@echo "Setting up development environment..."
-	git config core.hooksPath .githooks
-	@echo "✓ Git hooks configured"
-	@echo "Done! Pre-commit hooks are now active."
-
-# Run linting checks (same as pre-commit hook)
-lint:
-	@echo "Running lint checks..."
-	@gofmt -l main.go cmd/ pkg/ | grep . && (echo "❌ Run 'gofmt -w .' to fix" && exit 1) || echo "✓ Formatting OK"
-	@go vet ./... && echo "✓ Vet OK"
-	@go mod verify && echo "✓ Dependencies OK"
-
 # Show help
 help:
 	@echo "Pincho CLI - Makefile targets:"
 	@echo ""
-	@echo "  make setup         Setup dev environment (git hooks)"
 	@echo "  make build         Build binary for current platform"
 	@echo "  make build-all     Build binaries for all platforms (dist/)"
 	@echo "  make test          Run tests"
 	@echo "  make test-coverage Run tests with coverage report"
-	@echo "  make lint          Run formatting and lint checks"
 	@echo "  make install       Build and install to /usr/local/bin"
 	@echo "  make clean         Remove build artifacts"
 	@echo "  make help          Show this help message"
