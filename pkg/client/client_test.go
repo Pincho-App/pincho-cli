@@ -25,7 +25,7 @@ func TestNew(t *testing.T) {
 	}
 
 	// Verify User-Agent is set
-	expectedUserAgent := "wirepusher-cli/" + Version
+	expectedUserAgent := "pincho-cli/" + Version
 	if client.UserAgent != expectedUserAgent {
 		t.Errorf("expected UserAgent to be %s, got %s", expectedUserAgent, client.UserAgent)
 	}
@@ -52,8 +52,8 @@ func TestClient_Send_Success(t *testing.T) {
 
 		// Verify User-Agent header
 		userAgent := r.Header.Get("User-Agent")
-		if !strings.HasPrefix(userAgent, "wirepusher-cli/") {
-			t.Errorf("expected User-Agent to start with 'wirepusher-cli/', got '%s'", userAgent)
+		if !strings.HasPrefix(userAgent, "pincho-cli/") {
+			t.Errorf("expected User-Agent to start with 'pincho-cli/', got '%s'", userAgent)
 		}
 
 		// Send success response

@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/wirepusher/cli/pkg/client"
+	"gitlab.com/pincho-app/pincho-cli/pkg/client"
 )
 
 // getTokenOptional retrieves the token from flags, env vars, or config (in that order)
@@ -20,7 +20,7 @@ func getTokenOptional(cmd *cobra.Command) string {
 	}
 
 	// Try environment variable
-	token = os.Getenv("WIREPUSHER_TOKEN")
+	token = os.Getenv("PINCHO_TOKEN")
 	if token != "" {
 		return token
 	}
@@ -34,7 +34,7 @@ func getTokenOptional(cmd *cobra.Command) string {
 // Returns empty string if not found (client will use default)
 func getAPIURL(cmd *cobra.Command) string {
 	// Try environment variable first
-	apiURL := os.Getenv("WIREPUSHER_API_URL")
+	apiURL := os.Getenv("PINCHO_API_URL")
 	if apiURL != "" {
 		return apiURL
 	}
@@ -62,7 +62,7 @@ func getTimeout(cmd *cobra.Command) time.Duration {
 	}
 
 	// Try environment variable
-	if timeoutStr := os.Getenv("WIREPUSHER_TIMEOUT"); timeoutStr != "" {
+	if timeoutStr := os.Getenv("PINCHO_TIMEOUT"); timeoutStr != "" {
 		if timeout, err := strconv.Atoi(timeoutStr); err == nil && timeout > 0 {
 			return time.Duration(timeout) * time.Second
 		}
@@ -86,7 +86,7 @@ func getMaxRetries(cmd *cobra.Command) int {
 	}
 
 	// Try environment variable
-	if retriesStr := os.Getenv("WIREPUSHER_MAX_RETRIES"); retriesStr != "" {
+	if retriesStr := os.Getenv("PINCHO_MAX_RETRIES"); retriesStr != "" {
 		if retries, err := strconv.Atoi(retriesStr); err == nil && retries >= 0 {
 			return retries
 		}

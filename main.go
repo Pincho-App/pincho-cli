@@ -1,6 +1,6 @@
 package main
 
-import "gitlab.com/wirepusher/cli/cmd"
+import "gitlab.com/pincho-app/pincho-cli/cmd"
 
 func main() {
 	cmd.Execute()

@@ -1,4 +1,4 @@
-// Package validation provides input validation utilities for WirePusher CLI.
+// Package validation provides input validation utilities for Pincho CLI.
 //
 // The package implements validation and normalization logic for notification
 // parameters, ensuring they meet API requirements before submission.
@@ -15,7 +15,7 @@
 //	normalized, err := validation.NormalizeAndValidateTags(tags)
 //	// Returns: ["production", "deploy", "release-v1"] (normalized and deduplicated)
 //
-// The validation logic matches the WirePusher API requirements to provide
+// The validation logic matches the Pincho API requirements to provide
 // early client-side validation and better error messages.
 package validation
 

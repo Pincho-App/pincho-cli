@@ -1,4 +1,4 @@
-# Contributing to WirePusher CLI
+# Contributing to Pincho CLI
 
 Thanks for considering contributing! This is a small project with a small team, so every contribution makes a real difference.
 
@@ -10,11 +10,11 @@ Be respectful and constructive. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for
 
 ```bash
 # Get the code
-git clone https://gitlab.com/wirepusher/wirepusher-cli.git
-cd wirepusher-cli
+git clone https://gitlab.com/pincho/pincho-cli.git
+cd pincho-cli
 
 # Build and test
-go build -o wirepusher
+go build -o pincho
 go test ./...
 
 # Make sure everything passes
@@ -29,7 +29,7 @@ go vet ./...
 
 ### Report a Bug
 
-[Check existing issues](https://gitlab.com/wirepusher/wirepusher-cli/-/issues) first, then create a new one with:
+[Check existing issues](https://gitlab.com/pincho/pincho-cli/-/issues) first, then create a new one with:
 
 - What you did (exact command)
 - What happened vs what you expected
@@ -40,7 +40,7 @@ go vet ./...
 ```
 ## Retry logic doesn't work for 429 errors
 
-**Command:** wirepusher send "Title" "Message" --verbose
+**Command:** pincho send "Title" "Message" --verbose
 **Expected:** Retries with backoff
 **Actual:** Exits immediately
 **Environment:** CLI v1.0.0, Go 1.23, Ubuntu 22.04
@@ -121,11 +121,11 @@ go test ./pkg/client -v    # Specific package
 
 ```bash
 # Local build
-go build -o wirepusher
+go build -o pincho
 
 # Cross-compile
-GOOS=linux GOARCH=amd64 go build -o wirepusher-linux-amd64
-GOOS=darwin GOARCH=arm64 go build -o wirepusher-darwin-arm64
+GOOS=linux GOARCH=amd64 go build -o pincho-linux-amd64
+GOOS=darwin GOARCH=arm64 go build -o pincho-darwin-arm64
 ```
 
 ## CI/CD Pipeline
@@ -185,19 +185,19 @@ git push origin v1.0.0
 ### Post-Release Verification
 
 1. **Monitor Cloud Build**
-   - Check: https://console.cloud.google.com/cloud-build/builds?project=wirepusher-dev
+   - Check: https://console.cloud.google.com/cloud-build/builds?project=pincho-dev
    - All steps should pass (tests, GoReleaser)
 
 2. **Verify GitLab Release**
-   - Check: https://gitlab.com/wirepusher/wirepusher-cli/-/releases
+   - Check: https://gitlab.com/pincho/pincho-cli/-/releases
    - Should have 7 platform binaries + checksums.txt
 
 3. **Test Binary Download**
    ```bash
    # Download and verify
-   curl -LO https://gitlab.com/wirepusher/wirepusher-cli/-/releases/v1.0.0/downloads/wirepusher_1.0.0_darwin_arm64.tar.gz
-   tar -xzf wirepusher_1.0.0_darwin_arm64.tar.gz
-   ./wirepusher --version
+   curl -LO https://gitlab.com/pincho/pincho-cli/-/releases/v1.0.0/downloads/pincho_1.0.0_darwin_arm64.tar.gz
+   tar -xzf pincho_1.0.0_darwin_arm64.tar.gz
+   ./pincho --version
    ```
 
 ### Version Numbering

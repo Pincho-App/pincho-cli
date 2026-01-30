@@ -14,8 +14,8 @@ ARG VERSION=dev
 ARG COMMIT=none
 ARG DATE=unknown
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w -X 'gitlab.com/wirepusher/cli/cmd.version=${VERSION}' -X 'gitlab.com/wirepusher/cli/cmd.commit=${COMMIT}' -X 'gitlab.com/wirepusher/cli/cmd.date=${DATE}'" \
-    -o wirepusher main.go
+    -ldflags="-s -w -X 'gitlab.com/pincho-app/pincho-cli/cmd.version=${VERSION}' -X 'gitlab.com/pincho-app/pincho-cli/cmd.commit=${COMMIT}' -X 'gitlab.com/pincho-app/pincho-cli/cmd.date=${DATE}'" \
+    -o pincho main.go
 
 # Final minimal image
 FROM alpine:latest
@@ -24,7 +24,7 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-COPY --from=builder /app/wirepusher /usr/local/bin/
+COPY --from=builder /app/pincho /usr/local/bin/
 
-ENTRYPOINT ["wirepusher"]
+ENTRYPOINT ["pincho"]
 CMD ["--help"]

@@ -36,9 +36,9 @@ Provide detailed steps to reproduce the issue:
 <!-- Provide a minimal code example that reproduces the issue -->
 
 ```typescript
-import { WirePusher } from 'wirepusher';
+import { Pincho } from 'pincho';
 
-const client = new WirePusher({
+const client = new Pincho({
   token: 'wpt_...',
   userId: '...'
 });

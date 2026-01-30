@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/wirepusher/cli/pkg/client"
-	clierrors "gitlab.com/wirepusher/cli/pkg/errors"
-	"gitlab.com/wirepusher/cli/pkg/logging"
+	"gitlab.com/pincho-app/pincho-cli/pkg/client"
+	clierrors "gitlab.com/pincho-app/pincho-cli/pkg/errors"
+	"gitlab.com/pincho-app/pincho-cli/pkg/logging"
 )
 
 // notifaiCmd represents the notifai command
@@ -41,19 +41,19 @@ Rate Limit: 50 requests per hour per token
 
 Examples:
   # Basic usage
-  wirepusher notifai "deployment finished successfully, v2.1.3 is live on prod"
+  pincho notifai "deployment finished successfully, v2.1.3 is live on prod"
 
   # With notification type
-  wirepusher notifai "cpu usage at 95% on web-server-3" --type alert
+  pincho notifai "cpu usage at 95% on web-server-3" --type alert
 
   # Read from stdin
-  echo "backup completed, 2.3GB uploaded to S3" | wirepusher notifai --stdin
+  echo "backup completed, 2.3GB uploaded to S3" | pincho notifai --stdin
 
   # Read from file
-  cat deploy-log.txt | wirepusher notifai --stdin --type deploy
+  cat deploy-log.txt | pincho notifai --stdin --type deploy
 
   # JSON output
-  wirepusher notifai "server restarted after update" --json
+  pincho notifai "server restarted after update" --json
 `,
 	RunE: runNotifAI,
 }
@@ -80,7 +80,7 @@ func runNotifAI(cmd *cobra.Command, args []string) error {
 	if token == "" {
 		return clierrors.NewUsageError(
 			"API token is required",
-			fmt.Errorf("no token provided via --token flag, WIREPUSHER_TOKEN environment variable, or config file"),
+			fmt.Errorf("no token provided via --token flag, PINCHO_TOKEN environment variable, or config file"),
 		)
 	}
 
@@ -198,7 +198,7 @@ func categorizeNotifAIError(err error) error {
 	case *clierrors.ValidationError:
 		return clierrors.NewUsageError("Invalid input", e)
 	case *clierrors.AuthenticationError:
-		return clierrors.NewUsageError("Authentication failed", fmt.Errorf("%v\n\nGet your token: Open WirePusher app → Settings → Help → Copy token\nOr set it: wirepusher config set token YOUR_TOKEN", e))
+		return clierrors.NewUsageError("Authentication failed", fmt.Errorf("%v\n\nGet your token: Open Pincho app → Settings → Help → Copy token\nOr set it: pincho config set token YOUR_TOKEN", e))
 	case *clierrors.RateLimitError:
 		return clierrors.NewAPIError("Rate limit exceeded", fmt.Errorf("%v\n\nThe notifai endpoint allows 50 requests per hour. Please wait before trying again.", e))
 	case *clierrors.ServerError:

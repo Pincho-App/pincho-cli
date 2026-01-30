@@ -1,13 +1,13 @@
 #!/bin/sh
-# WirePusher CLI Installer
-# Usage: curl -sSL https://gitlab.com/wirepusher/wirepusher-cli/-/raw/main/install.sh | sh
+# Pincho CLI Installer
+# Usage: curl -sSL https://gitlab.com/pincho-app/pincho-cli/-/raw/main/install.sh | sh
 
 set -e
 
-REPO="wirepusher/wirepusher-cli"
+REPO="pincho-app/pincho-cli"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
-BINARY_NAME="wirepusher"
-PROJECT_NAME="wirepusher-cli"  # Name used in archive files
+BINARY_NAME="pincho"
+PROJECT_NAME="pincho-cli"  # Name used in archive files
 
 # Colors for output
 RED='\033[0;31m'
@@ -51,10 +51,10 @@ detect_arch() {
 # Get latest version from GitLab API
 get_latest_version() {
     if command -v curl >/dev/null 2>&1; then
-        curl -sSL "https://gitlab.com/api/v4/projects/wirepusher%2Fwirepusher-cli/releases" | \
+        curl -sSL "https://gitlab.com/api/v4/projects/pincho-app%2Fpincho-cli/releases" | \
             grep -o '"tag_name":"[^"]*"' | head -1 | cut -d'"' -f4
     elif command -v wget >/dev/null 2>&1; then
-        wget -qO- "https://gitlab.com/api/v4/projects/wirepusher%2Fwirepusher-cli/releases" | \
+        wget -qO- "https://gitlab.com/api/v4/projects/pincho-app%2Fpincho-cli/releases" | \
             grep -o '"tag_name":"[^"]*"' | head -1 | cut -d'"' -f4
     else
         error "curl or wget is required"
@@ -76,7 +76,7 @@ download() {
 }
 
 main() {
-    info "WirePusher CLI Installer"
+    info "Pincho CLI Installer"
     echo ""
 
     # Detect platform
@@ -149,16 +149,16 @@ main() {
     if command -v "$BINARY_NAME" >/dev/null 2>&1; then
         INSTALLED_VERSION=$("$BINARY_NAME" --version 2>/dev/null | head -1 || echo "unknown")
         echo ""
-        info "Successfully installed WirePusher CLI!"
+        info "Successfully installed Pincho CLI!"
         info "Version: ${INSTALLED_VERSION}"
         info "Location: ${INSTALL_DIR}/${BINARY_NAME}"
         echo ""
         info "Get started:"
-        echo "  1. Get your token: Open WirePusher app → Settings → Help → Copy token"
+        echo "  1. Get your token: Open Pincho app → Settings → Help → Copy token"
         echo "  2. Send a test notification:"
-        echo "     wirepusher send \"Hello\" \"Test from CLI\" --token YOUR_TOKEN"
+        echo "     pincho send \"Hello\" \"Test from CLI\" --token YOUR_TOKEN"
         echo ""
-        info "For more info: wirepusher --help"
+        info "For more info: pincho --help"
     else
         warn "Installation complete, but ${BINARY_NAME} is not in your PATH"
         warn "You may need to add ${INSTALL_DIR} to your PATH"

@@ -10,16 +10,16 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/wirepusher/cli/pkg/client"
-	clierrors "gitlab.com/wirepusher/cli/pkg/errors"
-	"gitlab.com/wirepusher/cli/pkg/logging"
+	"gitlab.com/pincho-app/pincho-cli/pkg/client"
+	clierrors "gitlab.com/pincho-app/pincho-cli/pkg/errors"
+	"gitlab.com/pincho-app/pincho-cli/pkg/logging"
 )
 
 // sendCmd represents the send command
 var sendCmd = &cobra.Command{
 	Use:   "send <title> [message]",
 	Short: "Send a push notification",
-	Long: `Send a push notification via WirePusher.
+	Long: `Send a push notification via Pincho.
 
 The title is required, and message is optional.
 Authentication requires a token from flags,
@@ -27,34 +27,34 @@ environment variables, or the config file.
 
 Examples:
   # Simple notification (using token)
-  wirepusher send "Build Complete" "Deploy finished successfully"
+  pincho send "Build Complete" "Deploy finished successfully"
 
   # Title-only notification (message is optional)
-  wirepusher send "Deploy Complete"
+  pincho send "Deploy Complete"
 
   # With notification type
-  wirepusher send "Alert" "CPU usage high" --type alert
+  pincho send "Alert" "CPU usage high" --type alert
 
   # With tags (normalized to lowercase, max 10 tags, 50 chars each)
-  wirepusher send "Deploy" "v1.2.3 deployed" --tag production --tag release
+  pincho send "Deploy" "v1.2.3 deployed" --tag production --tag release
 
   # With image and action URL
-  wirepusher send "Success" "All tests passed" \
+  pincho send "Success" "All tests passed" \
     --image-url https://example.com/success.png \
     --action-url https://example.com/build/123
 
   # With encryption (message encrypted with AES-128-CBC)
-  wirepusher send "Secure Alert" "Sensitive data here" \
+  pincho send "Secure Alert" "Sensitive data here" \
     --encryption-password "secret123" \
     --type secure
 
   # Read message from stdin with encryption
-  echo "Confidential report" | wirepusher send "Report" --stdin \
+  echo "Confidential report" | pincho send "Report" --stdin \
     --encryption-password "secret123"
 
 
   # Override config with flags
-  wirepusher send "Test" "Message" --token abc123
+  pincho send "Test" "Message" --token abc123
 `,
 	RunE: runSend,
 }
@@ -89,7 +89,7 @@ func runSend(cmd *cobra.Command, args []string) error {
 	if token == "" {
 		return clierrors.NewUsageError(
 			"API token is required",
-			fmt.Errorf("no token provided via --token flag, WIREPUSHER_TOKEN environment variable, or config file"),
+			fmt.Errorf("no token provided via --token flag, PINCHO_TOKEN environment variable, or config file"),
 		)
 	}
 
@@ -218,7 +218,7 @@ func categorizeError(err error) error {
 	case *clierrors.ValidationError:
 		return clierrors.NewUsageError("Invalid input", e)
 	case *clierrors.AuthenticationError:
-		return clierrors.NewUsageError("Authentication failed", fmt.Errorf("%v\n\nGet your token: Open WirePusher app → Settings → Help → Copy token\nOr set it: wirepusher config set token YOUR_TOKEN", e))
+		return clierrors.NewUsageError("Authentication failed", fmt.Errorf("%v\n\nGet your token: Open Pincho app → Settings → Help → Copy token\nOr set it: pincho config set token YOUR_TOKEN", e))
 	case *clierrors.RateLimitError:
 		return clierrors.NewAPIError("Rate limit exceeded", fmt.Errorf("%v\n\nThe send endpoint allows 30 requests per hour. Please wait before trying again.", e))
 	case *clierrors.ServerError:

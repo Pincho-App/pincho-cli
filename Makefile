@@ -1,11 +1,11 @@
 .PHONY: build build-all test clean install help
 
 # Variables
-BINARY_NAME=wirepusher
+BINARY_NAME=pincho
 VERSION?=dev
 COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
 DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS=-ldflags "-X 'gitlab.com/wirepusher/cli/cmd.version=$(VERSION)' -X 'gitlab.com/wirepusher/cli/cmd.commit=$(COMMIT)' -X 'gitlab.com/wirepusher/cli/cmd.date=$(DATE)'"
+LDFLAGS=-ldflags "-X 'gitlab.com/pincho-app/pincho-cli/cmd.version=$(VERSION)' -X 'gitlab.com/pincho-app/pincho-cli/cmd.commit=$(COMMIT)' -X 'gitlab.com/pincho-app/pincho-cli/cmd.date=$(DATE)'"
 
 # Build for current platform
 build:
@@ -47,11 +47,11 @@ clean:
 install: build
 	@echo "Installing to /usr/local/bin..."
 	sudo mv $(BINARY_NAME) /usr/local/bin/
-	@echo "Done! Run 'wirepusher --help' to get started"
+	@echo "Done! Run 'pincho --help' to get started"
 
 # Show help
 help:
-	@echo "WirePusher CLI - Makefile targets:"
+	@echo "Pincho CLI - Makefile targets:"
 	@echo ""
 	@echo "  make build         Build binary for current platform"
 	@echo "  make build-all     Build binaries for all platforms (dist/)"

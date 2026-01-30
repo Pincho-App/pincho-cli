@@ -1,14 +1,14 @@
-// Package config provides configuration management for WirePusher CLI.
+// Package config provides configuration management for Pincho CLI.
 //
 // The package handles loading, saving, and retrieving configuration values
-// from the user's config file (~/.wirepusher/config.yaml). Configuration
+// from the user's config file (~/.pincho/config.yaml). Configuration
 // files store persistent settings like API tokens, custom API URLs, and
 // other preferences.
 //
 // Configuration Priority (highest to lowest):
 //  1. Command-line flags (--token, --timeout, etc.)
-//  2. Environment variables (WIREPUSHER_TOKEN, WIREPUSHER_API_URL, etc.)
-//  3. Config file (~/.wirepusher/config.yaml)
+//  2. Environment variables (PINCHO_TOKEN, PINCHO_API_URL, etc.)
+//  3. Config file (~/.pincho/config.yaml)
 //
 // Security:
 //   - Config directory created with 0700 permissions (owner-only access)
@@ -27,14 +27,14 @@
 //	cfg, err := config.Load()
 //
 // Supported configuration keys:
-//   - token: WirePusher API token
+//   - token: Pincho API token
 //   - api_url: Custom API endpoint URL
 //   - timeout: HTTP request timeout in seconds (overrides default 30s)
 //   - max_retries: Maximum number of retry attempts (overrides default 3)
 //   - default_type: Default notification type (e.g., "alert", "deploy", "info")
 //   - default_tags: Default tags to include with all notifications (array of strings)
 //
-// Example config file (~/.wirepusher/config.yaml):
+// Example config file (~/.pincho/config.yaml):
 //
 //	token: abc123
 //	api_url: https://custom-api.example.com/send
@@ -56,13 +56,13 @@ import (
 
 const (
 	// ConfigDirName is the name of the config directory
-	ConfigDirName = ".wirepusher"
+	ConfigDirName = ".pincho"
 
 	// ConfigFileName is the name of the config file (without extension)
 	ConfigFileName = "config"
 )
 
-// Config represents the WirePusher CLI configuration
+// Config represents the Pincho CLI configuration
 type Config struct {
 	Token       string   `mapstructure:"token"`
 	ID          string   `mapstructure:"id"`
@@ -120,7 +120,7 @@ func InitConfig() error {
 	viper.SetConfigType("yaml")
 
 	// Set environment variable prefix
-	viper.SetEnvPrefix("WIREPUSHER")
+	viper.SetEnvPrefix("PINCHO")
 	viper.AutomaticEnv()
 
 	// Read config file if it exists

@@ -10,10 +10,10 @@ import (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
-	Long: `Print the version, commit hash, and build date of the WirePusher CLI.
+	Long: `Print the version, commit hash, and build date of the Pincho CLI.
 
 Example:
-  wirepusher version
+  pincho version
 `,
 	Run: runVersion,
 }

@@ -23,7 +23,7 @@ Don't:
 
 ## Reporting Issues
 
-If you experience or witness unacceptable behavior, report it to **support@wirepusher.dev**.
+If you experience or witness unacceptable behavior, report it to **support@pincho.dev**.
 
 All reports will be reviewed and handled with discretion. We'll keep your information confidential.
 
@@ -45,4 +45,4 @@ This code of conduct applies to all project spaces (issues, pull requests, discu
 
 **Attribution:** Adapted from the [Contributor Covenant](https://www.contributor-covenant.org/) v2.0.
 
-Questions? Email support@wirepusher.dev or see the [FAQ](https://www.contributor-covenant.org/faq).
+Questions? Email support@pincho.dev or see the [FAQ](https://www.contributor-covenant.org/faq).

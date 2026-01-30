@@ -1,16 +1,16 @@
-# WirePusher CLI
+# Pincho CLI
 
-Official command-line tool for [WirePusher](https://wirepusher.dev) push notifications.
+Official command-line tool for [Pincho](https://pincho.app) push notifications.
 
 Send push notifications from your terminal, scripts, and CI/CD pipelines.
 
 ## Installation
 
 ```bash
-curl -sSL https://gitlab.com/wirepusher/wirepusher-cli/-/raw/main/install.sh | sh
+curl -sSL https://gitlab.com/pincho-app/pincho-cli/-/raw/main/install.sh | sh
 ```
 
-Or download from [Releases](https://gitlab.com/wirepusher/wirepusher-cli/-/releases).
+Or download from [Releases](https://gitlab.com/pincho-app/pincho-cli/-/releases).
 
 ## Quick Start
 
@@ -18,15 +18,15 @@ Or download from [Releases](https://gitlab.com/wirepusher/wirepusher-cli/-/relea
 # Get token: Open app → Settings → Help → Copy token
 
 # Send notification
-wirepusher send "Deploy Complete" "v1.2.3 is live" --token YOUR_TOKEN
+pincho send "Deploy Complete" "v1.2.3 is live" --token YOUR_TOKEN
 
 # Or use environment variable
-export WIREPUSHER_TOKEN=YOUR_TOKEN
-wirepusher send "Deploy Complete" "v1.2.3 is live"
+export PINCHO_TOKEN=YOUR_TOKEN
+pincho send "Deploy Complete" "v1.2.3 is live"
 
 # Or save in config (recommended)
-wirepusher config set token YOUR_TOKEN
-wirepusher send "Deploy Complete" "v1.2.3 is live"
+pincho config set token YOUR_TOKEN
+pincho send "Deploy Complete" "v1.2.3 is live"
 ```
 
 ## Features
@@ -34,22 +34,22 @@ wirepusher send "Deploy Complete" "v1.2.3 is live"
 ### Send notifications
 
 ```bash
-wirepusher send "Build Complete"
-wirepusher send "Build Complete" "All tests passed"
-wirepusher send "Deploy" "v1.2.3" --type deploy --tag production
+pincho send "Build Complete"
+pincho send "Build Complete" "All tests passed"
+pincho send "Deploy" "v1.2.3" --type deploy --tag production
 ```
 
 ### AI-generated notifications
 
 ```bash
-wirepusher notifai "deployment finished successfully, v2.1.3 is live on prod"
+pincho notifai "deployment finished successfully, v2.1.3 is live on prod"
 # AI generates title, message, tags automatically
 ```
 
 ### Pipe command output
 
 ```bash
-echo "Backup complete" | wirepusher send "Backup Status" --stdin
+echo "Backup complete" | pincho send "Backup Status" --stdin
 ```
 
 ### CI/CD integration
@@ -59,9 +59,9 @@ echo "Backup complete" | wirepusher send "Backup Status" --stdin
 deploy:
   script:
     - ./deploy.sh
-    - wirepusher send "Deploy Complete" "Version ${CI_COMMIT_TAG}"
+    - pincho send "Deploy Complete" "Version ${CI_COMMIT_TAG}"
   variables:
-    WIREPUSHER_TOKEN: $WIREPUSHER_TOKEN
+    PINCHO_TOKEN: $PINCHO_TOKEN
 ```
 
 Exit codes for automation:
@@ -73,7 +73,7 @@ Exit codes for automation:
 ### Encrypted messages
 
 ```bash
-wirepusher send "Security Alert" "Sensitive data" \
+pincho send "Security Alert" "Sensitive data" \
   --type secure \
   --encryption-password "secret123"
 ```
@@ -81,13 +81,13 @@ wirepusher send "Security Alert" "Sensitive data" \
 ## Configuration
 
 ```bash
-wirepusher config set token YOUR_TOKEN
-wirepusher config set timeout 60
-wirepusher config set max_retries 5
-wirepusher config list
+pincho config set token YOUR_TOKEN
+pincho config set timeout 60
+pincho config set max_retries 5
+pincho config list
 ```
 
-Config file: `~/.wirepusher/config.yaml`
+Config file: `~/.pincho/config.yaml`
 
 ## Smart Retries
 
@@ -100,9 +100,9 @@ Automatic exponential backoff for network errors:
 
 | Variable | Description |
 |----------|-------------|
-| `WIREPUSHER_TOKEN` | API token |
-| `WIREPUSHER_TIMEOUT` | Request timeout (seconds) |
-| `WIREPUSHER_MAX_RETRIES` | Max retry attempts |
+| `PINCHO_TOKEN` | API token |
+| `PINCHO_TIMEOUT` | Request timeout (seconds) |
+| `PINCHO_MAX_RETRIES` | Max retry attempts |
 
 ## Requirements
 
@@ -115,9 +115,9 @@ Automatic exponential backoff for network errors:
 - [Architecture](docs/ARCHITECTURE.md) - Design and internals
 - [Contributing](CONTRIBUTING.md) - Development guide
 - [Changelog](CHANGELOG.md) - Release history
-- [App](https://wirepusher.dev)
-- [API Docs](https://wirepusher.com/docs)
-- [Issues](https://gitlab.com/wirepusher/wirepusher-cli/-/issues)
+- [App](https://pincho.app)
+- [API Docs](https://pincho.app/help)
+- [Issues](https://gitlab.com/pincho-app/pincho-cli/-/issues)
 
 ## License
 

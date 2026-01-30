@@ -1,25 +1,25 @@
-# WirePusher CLI Examples
+# Pincho CLI Examples
 
-This directory contains example scripts demonstrating various use cases for the WirePusher CLI.
+This directory contains example scripts demonstrating various use cases for the Pincho CLI.
 
 ## Prerequisites
 
 Before running these examples, you need:
 
-1. WirePusher CLI installed
-2. API credentials from your WirePusher account (token)
+1. Pincho CLI installed
+2. API credentials from your Pincho account (token)
 
 Set up your credentials:
 ```bash
 # Option 1: Using token (recommended)
-wirepusher config set token YOUR_TOKEN
+pincho config set token YOUR_TOKEN
 
 ```
 
 Or use environment variables:
 ```bash
 # Using token
-export WIREPUSHER_TOKEN="your-token"
+export PINCHO_TOKEN="your-token"
 
 ```
 
@@ -48,7 +48,7 @@ deploy:
   script:
     - ./examples/ci-cd.sh
   variables:
-    WIREPUSHER_TOKEN: $WIREPUSHER_TOKEN
+    PINCHO_TOKEN: $PINCHO_TOKEN
     ```
 
 ### [log-monitoring.sh](log-monitoring.sh)
@@ -82,7 +82,7 @@ End-to-end encryption examples showing:
 - Batch sending with encryption
 
 **Prerequisites for encryption:**
-1. Create notification types in WirePusher app with encryption enabled
+1. Create notification types in Pincho app with encryption enabled
 2. Set the same password in the app as used in the examples
 
 ```bash
@@ -98,19 +98,19 @@ chmod +x examples/encryption.sh
 ```bash
 #!/bin/bash
 ./your-script.sh && \
-  wirepusher send "Success" "Script completed" --type success || \
-  wirepusher send "Failed" "Script failed" --type alert
+  pincho send "Success" "Script completed" --type success || \
+  pincho send "Failed" "Script failed" --type alert
 ```
 
 ### Notify with command output
 ```bash
-df -h | wirepusher send "Disk Usage" --stdin
+df -h | pincho send "Disk Usage" --stdin
 ```
 
 ### Scheduled notifications (cron)
 ```bash
 # Add to crontab
-0 9 * * * wirepusher send "Daily Reminder" "Good morning! Time to check the dashboard"
+0 9 * * * pincho send "Daily Reminder" "Good morning! Time to check the dashboard"
 ```
 
 ## Authentication Methods
@@ -122,7 +122,7 @@ The CLI supports three authentication methods (in priority order):
 1. **Command-line flags** (highest priority)
    ```bash
    # Using token (recommended)
-   wirepusher send "Title" "Message" --token abc123
+   pincho send "Title" "Message" --token abc123
 
    
    ```
@@ -130,21 +130,21 @@ The CLI supports three authentication methods (in priority order):
 2. **Environment variables**
    ```bash
    # Using token
-   export WIREPUSHER_TOKEN="your-token"
-   wirepusher send "Title" "Message"
+   export PINCHO_TOKEN="your-token"
+   pincho send "Title" "Message"
 
    
-   wirepusher send "Title" "Message"
+   pincho send "Title" "Message"
    ```
 
 3. **Config file** (lowest priority)
    ```bash
    # Using token
-   wirepusher config set token your-token
-   wirepusher send "Title" "Message"
+   pincho config set token your-token
+   pincho send "Title" "Message"
 
    
-   wirepusher send "Title" "Message"
+   pincho send "Title" "Message"
    ```
 
 ## Troubleshooting
@@ -157,19 +157,19 @@ chmod +x examples/*.sh
 ### Token not found
 ```bash
 # Check your configuration
-wirepusher config list
+pincho config list
 
 # Or set it
-wirepusher config set token YOUR_TOKEN
+pincho config set token YOUR_TOKEN
 ```
 
 ### Test your setup
 ```bash
-wirepusher send "Test" "Testing WirePusher CLI"
+pincho send "Test" "Testing Pincho CLI"
 ```
 
 ## More Information
 
 - Full CLI documentation: [../README.md](../README.md)
-- WirePusher website: https://wirepusher.com
-- GitLab repository: https://gitlab.com/wirepusher/cli
+- Pincho website: https://pincho.com
+- GitLab repository: https://gitlab.com/pincho/cli

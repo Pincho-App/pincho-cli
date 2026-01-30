@@ -1,7 +1,7 @@
-// Package crypto provides message encryption utilities for WirePusher notifications.
+// Package crypto provides message encryption utilities for Pincho notifications.
 //
 // The package implements AES-128-CBC encryption with custom base64 encoding to
-// maintain compatibility with the WirePusher mobile app's encryption scheme.
+// maintain compatibility with the Pincho mobile app's encryption scheme.
 //
 // Encryption process:
 //  1. Derive 128-bit key from password using SHA1 hash (first 16 bytes)
@@ -10,7 +10,7 @@
 //  4. Encode encrypted data using custom Base64 (URL-safe with custom chars)
 //  5. Return encrypted message and IV (hex-encoded)
 //
-// The encryption scheme matches the WirePusher iOS/Android app implementation
+// The encryption scheme matches the Pincho iOS/Android app implementation
 // for end-to-end encrypted notifications. The encrypted message is stored on
 // the server and decrypted locally on the device using the same password.
 //
@@ -21,7 +21,7 @@
 //	// Send encrypted message and ivHex to API
 //
 // Note: SHA1 is used for key derivation to maintain compatibility with the
-// existing WirePusher app implementation. For new implementations, consider
+// existing Pincho app implementation. For new implementations, consider
 // using PBKDF2 or Argon2.
 package crypto
 
@@ -36,7 +36,7 @@ import (
 	"strings"
 )
 
-// CustomBase64Encode encodes bytes using custom Base64 encoding matching WirePusher app.
+// CustomBase64Encode encodes bytes using custom Base64 encoding matching Pincho app.
 //
 // Converts standard Base64 characters to custom encoding:
 //   - '+' → '-'
@@ -83,7 +83,7 @@ func pkcs7Pad(data []byte, blockSize int) []byte {
 
 // EncryptMessage encrypts text using AES-128-CBC with custom Base64 encoding.
 //
-// Encryption process matching WirePusher app:
+// Encryption process matching Pincho app:
 //  1. Derive key from password using SHA1
 //  2. Apply PKCS7 padding to plaintext
 //  3. Encrypt using AES-128-CBC with provided IV

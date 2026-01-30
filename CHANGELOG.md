@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to WirePusher CLI are documented here.
+All notable changes to Pincho CLI are documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), following [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -10,8 +10,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), follow
 - **NotifAI command**: AI-powered notifications using Gemini to convert free-form text into structured notifications
 - **Exit codes**: Standardized exit codes for CI/CD integration (0=success, 1=usage error, 2=API error, 3=system error)
 - **Automatic retries**: Exponential backoff for network errors, server errors, and rate limits
-- **Timeout configuration**: Configurable via `--timeout` flag, `WIREPUSHER_TIMEOUT` env var, or `timeout` config key
-- **Retry configuration**: Configurable via `--max-retries` flag, `WIREPUSHER_MAX_RETRIES` env var, or `max_retries` config key
+- **Timeout configuration**: Configurable via `--timeout` flag, `PINCHO_TIMEOUT` env var, or `timeout` config key
+- **Retry configuration**: Configurable via `--max-retries` flag, `PINCHO_MAX_RETRIES` env var, or `max_retries` config key
 - **Verbose logging**: `--verbose` flag for debugging (shows token, API URL, timeout, retries, progress)
 - **Config defaults**: `default_type` and `default_tags` in config file for automatic notification defaults
 - **Tag merging**: Intelligent merging of flag tags with config default_tags (no duplicates)
@@ -77,7 +77,7 @@ If upgrading from an early version:
 ### Configuration Example
 
 ```yaml
-# ~/.wirepusher/config.yaml
+# ~/.pincho/config.yaml
 token: your-token-here
 timeout: 60                 # Optional
 max_retries: 5              # Optional
@@ -91,6 +91,6 @@ default_tags:               # Optional
 
 ## Support
 
-- **Repository**: https://gitlab.com/wirepusher/wirepusher-cli
-- **Issues**: https://gitlab.com/wirepusher/wirepusher-cli/-/issues
+- **Repository**: https://gitlab.com/pincho/pincho-cli
+- **Issues**: https://gitlab.com/pincho/pincho-cli/-/issues
 - **Documentation**: See README.md and docs/ARCHITECTURE.md

@@ -14,7 +14,7 @@ func setupTestEnv(t *testing.T) (string, func()) {
 	t.Helper()
 
 	// Create temporary directory
-	tmpDir, err := os.MkdirTemp("", "wirepusher-test-*")
+	tmpDir, err := os.MkdirTemp("", "pincho-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}

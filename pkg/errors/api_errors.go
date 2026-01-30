@@ -1,4 +1,4 @@
-// Package errors provides structured error types for the WirePusher CLI.
+// Package errors provides structured error types for the Pincho CLI.
 package errors
 
 import (

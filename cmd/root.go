@@ -1,6 +1,6 @@
-// Package cmd implements the command-line interface for WirePusher CLI.
+// Package cmd implements the command-line interface for Pincho CLI.
 //
-// This package provides the main commands for interacting with the WirePusher
+// This package provides the main commands for interacting with the Pincho
 // API, including:
 //   - send: Send push notifications with title, message, and optional parameters
 //   - notifai: Use AI to generate notifications from free-form text
@@ -19,10 +19,10 @@
 //
 // Environment variables:
 //
-//	WIREPUSHER_TOKEN: API token
-//	WIREPUSHER_API_URL: Custom API endpoint
-//	WIREPUSHER_TIMEOUT: Request timeout in seconds
-//	WIREPUSHER_MAX_RETRIES: Maximum retry attempts
+//	PINCHO_TOKEN: API token
+//	PINCHO_API_URL: Custom API endpoint
+//	PINCHO_TIMEOUT: Request timeout in seconds
+//	PINCHO_MAX_RETRIES: Maximum retry attempts
 package cmd
 
 import (
@@ -30,9 +30,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/wirepusher/cli/pkg/config"
-	clierrors "gitlab.com/wirepusher/cli/pkg/errors"
-	"gitlab.com/wirepusher/cli/pkg/logging"
+	"gitlab.com/pincho-app/pincho-cli/pkg/config"
+	clierrors "gitlab.com/pincho-app/pincho-cli/pkg/errors"
+	"gitlab.com/pincho-app/pincho-cli/pkg/logging"
 )
 
 var (
@@ -47,14 +47,14 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "wirepusher",
-	Short: "Official CLI tool for WirePusher push notifications",
-	Long: `WirePusher CLI is a command-line tool for sending push notifications
-via the WirePusher API. Perfect for CI/CD pipelines, monitoring scripts,
+	Use:   "pincho",
+	Short: "Official CLI tool for Pincho push notifications",
+	Long: `Pincho CLI is a command-line tool for sending push notifications
+via the Pincho API. Perfect for CI/CD pipelines, monitoring scripts,
 and automation workflows.
 
-Documentation: https://gitlab.com/wirepusher/cli
-API Reference: https://wirepusher.com/docs`,
+Documentation: https://gitlab.com/pincho-app/pincho-cli
+API Reference: https://pincho.app/help`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Enable verbose logging if flag is set
 		if verbose, _ := cmd.Flags().GetBool("verbose"); verbose {
@@ -78,10 +78,10 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// Global flags
-	rootCmd.PersistentFlags().StringP("token", "t", "", "WirePusher API token (env: WIREPUSHER_TOKEN)")
+	rootCmd.PersistentFlags().StringP("token", "t", "", "Pincho API token (env: PINCHO_TOKEN)")
 	rootCmd.PersistentFlags().Bool("verbose", false, "Enable verbose output")
-	rootCmd.PersistentFlags().Int("timeout", 30, "HTTP request timeout in seconds (env: WIREPUSHER_TIMEOUT)")
-	rootCmd.PersistentFlags().Int("max-retries", 3, "Maximum number of retry attempts (env: WIREPUSHER_MAX_RETRIES)")
+	rootCmd.PersistentFlags().Int("timeout", 30, "HTTP request timeout in seconds (env: PINCHO_TIMEOUT)")
+	rootCmd.PersistentFlags().Int("max-retries", 3, "Maximum number of retry attempts (env: PINCHO_MAX_RETRIES)")
 }
 
 // initConfig reads in config file and ENV variables if set
@@ -93,5 +93,5 @@ func initConfig() {
 
 // GetVersionInfo returns version information as a formatted string
 func GetVersionInfo() string {
-	return fmt.Sprintf("wirepusher version %s\ncommit: %s\nbuilt: %s", version, commit, date)
+	return fmt.Sprintf("pincho version %s\ncommit: %s\nbuilt: %s", version, commit, date)
 }

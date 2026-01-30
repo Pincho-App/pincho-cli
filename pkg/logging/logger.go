@@ -1,4 +1,4 @@
-// Package logging provides structured logging utilities for WirePusher CLI.
+// Package logging provides structured logging utilities for Pincho CLI.
 //
 // The package uses Go's standard log/slog for structured, leveled logging.
 // Output is controlled by the --verbose flag, with all output going to stderr
@@ -21,7 +21,7 @@
 // The structured logging supports key-value pairs for better observability:
 //
 //	logging.Debug("Request configured",
-//	    "api_url", "https://api.wirepusher.dev/send",
+//	    "api_url", "https://api.pincho.app/send",
 //	    "timeout", "30s",
 //	    "max_retries", 3)
 package logging

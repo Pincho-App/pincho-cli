@@ -11,7 +11,7 @@ We release patches for security vulnerabilities in the following versions:
 
 ## Reporting a Vulnerability
 
-The WirePusher team takes security bugs seriously. We appreciate your efforts to responsibly disclose your findings.
+The Pincho team takes security bugs seriously. We appreciate your efforts to responsibly disclose your findings.
 
 ### How to Report
 
@@ -19,7 +19,7 @@ The WirePusher team takes security bugs seriously. We appreciate your efforts to
 
 Instead, please report security vulnerabilities via email to:
 
-**security@wirepusher.dev**
+**security@pincho.dev**
 
 ### What to Include
 
@@ -53,7 +53,7 @@ After you submit a report:
 
 ### For Users
 
-When using the WirePusher CLI:
+When using the Pincho CLI:
 
 1. **Keep the CLI updated** to the latest version
 2. **Never commit credentials** to version control
@@ -67,48 +67,48 @@ When using the WirePusher CLI:
 
 ```bash
 # ❌ Bad - Hardcoded token in script
-wirepusher send "Alert" "Message" --token wpt_abc123
+pincho send "Alert" "Message" --token wpt_abc123
 
 # ❌ Bad - Token in shell history
-export WIREPUSHER_TOKEN=wpt_abc123
+export PINCHO_TOKEN=wpt_abc123
 
 # ✅ Good - Token from secure environment variable
-WIREPUSHER_TOKEN=$(cat ~/.secrets/wirepusher) wirepusher send "Alert" "Message"
+PINCHO_TOKEN=$(cat ~/.secrets/pincho) pincho send "Alert" "Message"
 
 # ✅ Good - Token stored in config file with secure permissions
-wirepusher config set token wpt_abc123
-# Config stored in ~/.wirepusher/config.yaml (permissions: 0600)
+pincho config set token wpt_abc123
+# Config stored in ~/.pincho/config.yaml (permissions: 0600)
 
 # ✅ Good - Token from password manager
-wirepusher send "Alert" "Message" --token "$(pass show wirepusher/token)"
+pincho send "Alert" "Message" --token "$(pass show pincho/token)"
 ```
 
 ### Config File Security
 
 ```bash
 # Check config file permissions
-ls -la ~/.wirepusher/config.yaml
+ls -la ~/.pincho/config.yaml
 # Should show: -rw------- (0600)
 
 # Fix permissions if needed
-chmod 600 ~/.wirepusher/config.yaml
-chmod 700 ~/.wirepusher/
+chmod 600 ~/.pincho/config.yaml
+chmod 700 ~/.pincho/
 ```
 
 ### Error Handling in Scripts
 
 ```bash
 # ❌ Bad - No error handling
-wirepusher send "Alert" "Message"
+pincho send "Alert" "Message"
 
 # ✅ Good - Handle errors without exposing sensitive info
-if ! wirepusher send "Alert" "Message" 2>/dev/null; then
+if ! pincho send "Alert" "Message" 2>/dev/null; then
   echo "Failed to send notification" >&2
   exit 1
 fi
 
 # ✅ Good - Check exit codes for specific errors
-wirepusher send "Alert" "Message"
+pincho send "Alert" "Message"
 case $? in
   0) echo "Success" ;;
   1) echo "Usage error - check arguments" >&2 ;;
@@ -121,7 +121,7 @@ esac
 
 ```bash
 # ❌ Bad - No validation
-wirepusher send "$USER_INPUT_TITLE" "$USER_INPUT_MESSAGE"
+pincho send "$USER_INPUT_TITLE" "$USER_INPUT_MESSAGE"
 
 # ✅ Good - Validate input before sending
 title="$1"
@@ -144,7 +144,7 @@ if [[ ${#message} -gt 4096 ]]; then
   exit 1
 fi
 
-wirepusher send "$title" "$message"
+pincho send "$title" "$message"
 ```
 
 ### CI/CD Pipeline Security
@@ -154,9 +154,9 @@ wirepusher send "$title" "$message"
 # GitLab CI example
 send_notification:
   script:
-    - wirepusher send "Deploy Complete" "Version $CI_COMMIT_TAG deployed"
+    - pincho send "Deploy Complete" "Version $CI_COMMIT_TAG deployed"
   variables:
-    WIREPUSHER_TOKEN: $WIREPUSHER_TOKEN  # Set in CI/CD settings
+    PINCHO_TOKEN: $PINCHO_TOKEN  # Set in CI/CD settings
 ```
 
 ## Known Security Considerations
@@ -164,14 +164,14 @@ send_notification:
 ### API Token Security
 
 - Tokens are transmitted in `Authorization: Bearer` header over HTTPS
-- Tokens are stored in plaintext in `~/.wirepusher/config.yaml`
+- Tokens are stored in plaintext in `~/.pincho/config.yaml`
 - Config file permissions default to 0600 (owner read/write only)
 - Compromised tokens can be used to send notifications as your user
 - Rotate tokens regularly as a security best practice
 
 ### Network Communication
 
-- All communication with WirePusher API is over HTTPS
+- All communication with Pincho API is over HTTPS
 - The CLI uses Go's standard `net/http` package
 - Certificate validation is handled by the Go runtime
 - No custom TLS configuration - uses system defaults
@@ -180,7 +180,7 @@ send_notification:
 
 - Single static binary with no external dependencies
 - No runtime code execution or dynamic loading
-- No network connections except to WirePusher API
+- No network connections except to Pincho API
 - No local file access except for config file
 
 ### Dependencies
@@ -231,7 +231,7 @@ We thank the following individuals for responsibly disclosing security vulnerabi
 
 For security-related questions that aren't reporting vulnerabilities:
 
-- Email: security@wirepusher.dev
-- General questions: support@wirepusher.dev
+- Email: security@pincho.dev
+- General questions: support@pincho.dev
 
-Thank you for helping keep WirePusher and its users safe!
+Thank you for helping keep Pincho and its users safe!

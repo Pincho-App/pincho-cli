@@ -1,4 +1,4 @@
-# GoReleaser configuration for WirePusher CLI
+# GoReleaser configuration for Pincho CLI
 # https://goreleaser.com
 
 version: 2
@@ -9,16 +9,16 @@ before:
     - go test ./...
 
 builds:
-  - id: wirepusher
+  - id: pincho
     main: ./main.go
-    binary: wirepusher
+    binary: pincho
     env:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X 'gitlab.com/wirepusher/cli/cmd.version={{.Version}}'
-      - -X 'gitlab.com/wirepusher/cli/cmd.commit={{.ShortCommit}}'
-      - -X 'gitlab.com/wirepusher/cli/cmd.date={{.Date}}'
+      - -X 'gitlab.com/pincho-app/pincho-cli/cmd.version={{.Version}}'
+      - -X 'gitlab.com/pincho-app/pincho-cli/cmd.commit={{.ShortCommit}}'
+      - -X 'gitlab.com/pincho-app/pincho-cli/cmd.date={{.Date}}'
     goos:
       - linux
       - darwin
@@ -67,11 +67,11 @@ gitlab_urls:
 
 release:
   gitlab:
-    owner: wirepusher
-    name: wirepusher-cli
+    owner: pincho-app
+    name: pincho-cli
   draft: false
   prerelease: auto
-  name_template: "WirePusher CLI {{.Version}}"
+  name_template: "Pincho CLI {{.Version}}"
   footer: |
     ## Installation
 
@@ -84,5 +84,4 @@ release:
     ```
 
     ---
-    Full documentation: https://gitlab.com/wirepusher/wirepusher-cli
-
+    Full documentation: https://gitlab.com/pincho-app/pincho-cli

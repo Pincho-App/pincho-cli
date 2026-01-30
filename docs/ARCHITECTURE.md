@@ -1,6 +1,6 @@
-# WirePusher CLI Architecture
+# Pincho CLI Architecture
 
-This document explains the architecture, design decisions, and implementation details of the WirePusher CLI.
+This document explains the architecture, design decisions, and implementation details of the Pincho CLI.
 
 ## Table of Contents
 
@@ -14,7 +14,7 @@ This document explains the architecture, design decisions, and implementation de
 
 ## Overview
 
-WirePusher CLI is a command-line tool for sending push notifications via the WirePusher API. It's designed to be:
+Pincho CLI is a command-line tool for sending push notifications via the Pincho API. It's designed to be:
 
 - **Simple**: Easy to use with sensible defaults
 - **Flexible**: Supports multiple configuration methods
@@ -25,7 +25,7 @@ WirePusher CLI is a command-line tool for sending push notifications via the Wir
 ## Package Structure
 
 ```
-gitlab.com/wirepusher/cli/
+gitlab.com/pincho/cli/
 ├── cmd/                    # Command-line interface
 │   ├── root.go            # Root command and global flags
 │   ├── send.go            # Send command implementation
@@ -35,7 +35,7 @@ gitlab.com/wirepusher/cli/
 │   └── helpers.go         # Shared helper functions
 │
 ├── pkg/
-│   ├── client/            # WirePusher API client
+│   ├── client/            # Pincho API client
 │   │   ├── client.go      # HTTP client with retry logic
 │   │   └── client_test.go # Client tests
 │   │
@@ -64,11 +64,11 @@ gitlab.com/wirepusher/cli/
 
 **cmd**: Implements the command-line interface using Cobra. Each command (send, notifai, config) has its own file. The package handles argument parsing, flag management, and user interaction.
 
-**pkg/client**: Provides the HTTP client for the WirePusher API. Includes retry logic, timeout configuration, and response parsing. Handles both `/send` and `/notifai` endpoints.
+**pkg/client**: Provides the HTTP client for the Pincho API. Includes retry logic, timeout configuration, and response parsing. Handles both `/send` and `/notifai` endpoints.
 
-**pkg/config**: Manages configuration file operations using Viper. Handles reading from and writing to `~/.wirepusher/config.yaml` with secure file permissions.
+**pkg/config**: Manages configuration file operations using Viper. Handles reading from and writing to `~/.pincho/config.yaml` with secure file permissions.
 
-**pkg/crypto**: Implements AES-128-CBC encryption matching the WirePusher mobile app. Enables end-to-end encrypted notifications.
+**pkg/crypto**: Implements AES-128-CBC encryption matching the Pincho mobile app. Enables end-to-end encrypted notifications.
 
 **pkg/validation**: Validates and normalizes input parameters (currently tags). Provides early client-side validation before API calls.
 
@@ -82,20 +82,20 @@ The CLI supports three configuration methods with the following precedence (high
 
 1. **Command-line flags** (highest priority)
    ```bash
-   wirepusher send "Title" --token abc123 --timeout 60
+   pincho send "Title" --token abc123 --timeout 60
    ```
 
 2. **Environment variables**
    ```bash
-   export WIREPUSHER_TOKEN=abc123
-   export WIREPUSHER_TIMEOUT=60
-   wirepusher send "Title"
+   export PINCHO_TOKEN=abc123
+   export PINCHO_TIMEOUT=60
+   pincho send "Title"
    ```
 
 3. **Config file** (lowest priority)
    ```bash
-   wirepusher config set token abc123
-   wirepusher send "Title"
+   pincho config set token abc123
+   pincho send "Title"
    ```
 
 ### Configuration Flow
@@ -107,7 +107,7 @@ Check --flag value
     ↓ (if not set)
 Check environment variable
     ↓ (if not set)
-Check config file (~/.wirepusher/config.yaml)
+Check config file (~/.pincho/config.yaml)
     ↓ (if not set)
 Use default value or return error
 ```
@@ -116,10 +116,10 @@ Use default value or return error
 
 | Parameter | Flag | Environment Variable | Config Key | Default |
 |-----------|------|---------------------|------------|---------|
-| API Token | `--token, -t` | `WIREPUSHER_TOKEN` | `token` | *required* |
-| API URL | (none) | `WIREPUSHER_API_URL` | `api_url` | `https://api.wirepusher.dev/send` |
-| Timeout | `--timeout` | `WIREPUSHER_TIMEOUT` | `timeout` | `30` seconds |
-| Max Retries | `--max-retries` | `WIREPUSHER_MAX_RETRIES` | `max_retries` | `3` |
+| API Token | `--token, -t` | `PINCHO_TOKEN` | `token` | *required* |
+| API URL | (none) | `PINCHO_API_URL` | `api_url` | `https://api.pincho.dev/send` |
+| Timeout | `--timeout` | `PINCHO_TIMEOUT` | `timeout` | `30` seconds |
+| Max Retries | `--max-retries` | `PINCHO_MAX_RETRIES` | `max_retries` | `3` |
 | Default Type | `--type` (send only) | (none) | `default_type` | (empty) |
 | Default Tags | `--tag` (send only) | (none) | `default_tags` | (empty) |
 | Verbose | `--verbose` | (none) | (none) | `false` |
@@ -128,7 +128,7 @@ Use default value or return error
 
 ### Config File Examples
 
-**Basic config** (`~/.wirepusher/config.yaml`):
+**Basic config** (`~/.pincho/config.yaml`):
 ```yaml
 token: your-api-token-here
 ```
@@ -155,16 +155,16 @@ default_tags:                        # Always include these tags
 **Usage with config**:
 ```bash
 # Uses all configured defaults
-wirepusher send "Deploy Complete" "v1.2.3 deployed"
+pincho send "Deploy Complete" "v1.2.3 deployed"
 # → Uses: timeout=60s, retries=5, type=deploy, tags=[production, automated]
 
 # Override specific settings
-wirepusher send "Test Notification" --type test --tag staging
+pincho send "Test Notification" --type test --tag staging
 # → Uses: timeout=60s (from config), retries=5 (from config)
 #         type=test (from flag), tags=[staging, production, automated] (merged)
 
 # Completely override
-wirepusher send "Emergency" --timeout 10 --max-retries 0
+pincho send "Emergency" --timeout 10 --max-retries 0
 # → Uses: timeout=10s (from flag), retries=0 (from flag)
 ```
 
@@ -224,8 +224,8 @@ Errors include suggestions for resolution:
 # Authentication error
 Error: Authentication failed: invalid_api_token
 
-Get your token: Open WirePusher app → Settings → Help → Copy token
-Or set it: wirepusher config set token YOUR_TOKEN
+Get your token: Open Pincho app → Settings → Help → Copy token
+Or set it: pincho config set token YOUR_TOKEN
 
 # Rate limit error
 Error: Rate limit exceeded
@@ -289,20 +289,20 @@ Clone request & retry
 
 ```bash
 # Disable retries
-wirepusher send "Title" --max-retries 0
+pincho send "Title" --max-retries 0
 
 # Increase retries
-wirepusher send "Title" --max-retries 5
+pincho send "Title" --max-retries 5
 
 # Via environment variable
-export WIREPUSHER_MAX_RETRIES=5
+export PINCHO_MAX_RETRIES=5
 ```
 
 ## Encryption
 
 ### Why AES-128-CBC with SHA1?
 
-The encryption implementation uses AES-128-CBC with SHA1 key derivation to maintain **compatibility with the WirePusher mobile app**. This enables end-to-end encrypted notifications that can be decrypted on the device.
+The encryption implementation uses AES-128-CBC with SHA1 key derivation to maintain **compatibility with the Pincho mobile app**. This enables end-to-end encrypted notifications that can be decrypted on the device.
 
 **Design Constraints**:
 - Must match iOS/Android app implementation
@@ -348,7 +348,7 @@ This encoding is URL-safe and compatible with the mobile app's decryption.
 
 ```bash
 # Send encrypted notification
-wirepusher send "Secure Alert" "Sensitive data" \
+pincho send "Secure Alert" "Sensitive data" \
   --encryption-password "secret123" \
   --type secure
 
@@ -384,12 +384,12 @@ Exit codes enable CI/CD integration:
 
 ```bash
 # Retry on network errors, fail on validation errors
-if ! wirepusher send "Deploy" "$message"; then
+if ! pincho send "Deploy" "$message"; then
   exit_code=$?
   if [ $exit_code -eq 3 ]; then
     echo "Network error, retrying..."
     sleep 5
-    wirepusher send "Deploy" "$message"
+    pincho send "Deploy" "$message"
   else
     echo "Command failed with exit code $exit_code"
     exit $exit_code
@@ -411,10 +411,10 @@ Automatic retries with backoff make the CLI more reliable without requiring user
 Keeping stdout clean allows:
 ```bash
 # Parse JSON output
-notification=$(wirepusher send "Title" --json | jq '.response.notificationID')
+notification=$(pincho send "Title" --json | jq '.response.notificationID')
 
 # Use in pipes
-wirepusher send "Title" --json | jq '.response' | store-notification
+pincho send "Title" --json | jq '.response' | store-notification
 ```
 
 Verbose debug output goes to stderr and doesn't interfere with structured output.
@@ -424,8 +424,8 @@ Verbose debug output goes to stderr and doesn't interfere with structured output
 API tokens are sensitive credentials. Config directory (0700) and files (0600) are readable only by the owner:
 
 ```bash
-$ ls -la ~/.wirepusher/
-drwx------  2 user  user   64 Nov 14 10:00 .wirepusher/  # 0700
+$ ls -la ~/.pincho/
+drwx------  2 user  user   64 Nov 14 10:00 .pincho/  # 0700
 -rw-------  1 user  user  123 Nov 14 10:00 config.yaml   # 0600
 ```
 
@@ -437,13 +437,13 @@ The `/notifai` endpoint uses AI (Gemini) to convert free-form text into structur
 
 ```bash
 # Instead of:
-wirepusher send "Deploy Complete" \
+pincho send "Deploy Complete" \
   "Version 1.2.3 deployed to production" \
   --type deploy \
   --tag production --tag release
 
 # You can just:
-wirepusher notifai "v1.2.3 deployed to production"
+pincho notifai "v1.2.3 deployed to production"
 
 # AI generates title, message, tags, and type
 ```
@@ -486,5 +486,5 @@ When adding new features, consider:
 
 - [Cobra CLI Framework](https://github.com/spf13/cobra)
 - [Viper Configuration](https://github.com/spf13/viper)
-- [WirePusher API Documentation](https://wirepusher.com/docs)
+- [Pincho API Documentation](https://pincho.com/docs)
 - [Go CLI Best Practices](https://github.com/cli/cli/blob/trunk/docs/project-layout.md)

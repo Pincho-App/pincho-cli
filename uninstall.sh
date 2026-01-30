@@ -1,12 +1,12 @@
 #!/bin/sh
-# WirePusher CLI Uninstaller
-# Usage: curl -sSL https://gitlab.com/wirepusher/wirepusher-cli/-/raw/main/uninstall.sh | sh
+# Pincho CLI Uninstaller
+# Usage: curl -sSL https://gitlab.com/pincho-app/pincho-cli/-/raw/main/uninstall.sh | sh
 
 set -e
 
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
-BINARY_NAME="wirepusher"
-CONFIG_DIR="${HOME}/.wirepusher"
+BINARY_NAME="pincho"
+CONFIG_DIR="${HOME}/.pincho"
 
 # Colors for output
 RED='\033[0;31m'
@@ -28,7 +28,7 @@ error() {
 }
 
 main() {
-    info "WirePusher CLI Uninstaller"
+    info "Pincho CLI Uninstaller"
     echo ""
 
     # Check if binary exists
@@ -40,7 +40,7 @@ main() {
             BINARY_PATH=$(command -v "$BINARY_NAME")
             info "Found ${BINARY_NAME} at: ${BINARY_PATH}"
         else
-            warn "WirePusher CLI is not installed at ${INSTALL_DIR}/${BINARY_NAME}"
+            warn "Pincho CLI is not installed at ${INSTALL_DIR}/${BINARY_NAME}"
             warn "Or not found in PATH"
             exit 0
         fi
@@ -80,7 +80,7 @@ main() {
     fi
 
     echo ""
-    info "WirePusher CLI has been uninstalled"
+    info "Pincho CLI has been uninstalled"
 }
 
 main "$@"

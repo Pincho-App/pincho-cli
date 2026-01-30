@@ -1,6 +1,6 @@
 # CI/CD Setup Guide
 
-Setup guide for WirePusher CLI's CI/CD pipeline using Google Cloud Build and GoReleaser with GitLab releases.
+Setup guide for Pincho CLI's CI/CD pipeline using Google Cloud Build and GoReleaser with GitLab releases.
 
 ## Overview
 
@@ -12,7 +12,7 @@ The CI/CD pipeline is designed to:
 ## Prerequisites
 
 - Google Cloud Build triggers configured (via Terraform)
-- GitLab repository: `https://gitlab.com/wirepusher/wirepusher-cli`
+- GitLab repository: `https://gitlab.com/pincho/pincho-cli`
 - GitLab Personal Access Token with `api` scope
 
 ## Pipeline Steps
@@ -49,7 +49,7 @@ On Git tags matching `v*.*.*`:
 - Generates checksums
 
 ### 8. Release Notification (Tags Only)
-Sends push notification via WirePusher API on successful release:
+Sends push notification via Pincho API on successful release:
 - Uses `/send` endpoint with structured message
 - Includes release version, platform count, and link to GitLab release
 - Dogfooding: We use our own product for CI/CD notifications
@@ -63,7 +63,7 @@ The GitLab Personal Access Token is already configured in Secret Manager as `git
 **Verify the secret exists**:
 ```bash
 # Check secret exists (requires Secret Manager access)
-gcloud secrets describe gitlab-api-token-cloudbuild --project=wirepusher-dev
+gcloud secrets describe gitlab-api-token-cloudbuild --project=pincho-dev
 
 # Cloud Build access is already granted via Terraform
 # See: frontend/terraform/modules/cloudbuild/main.tf
@@ -77,13 +77,13 @@ availableSecrets:
       env: 'GITLAB_TOKEN'
 ```
 
-### 2. Verify WirePusher Token Secret
+### 2. Verify Pincho Token Secret
 
-The WirePusher API token for release notifications is stored in Secret Manager as `wirepusher-token`. This enables dogfooding - we use our own product for CI/CD notifications.
+The Pincho API token for release notifications is stored in Secret Manager as `pincho-token`. This enables dogfooding - we use our own product for CI/CD notifications.
 
 **Verify the secret exists**:
 ```bash
-gcloud secrets describe wirepusher-token --project=wirepusher-app-dev
+gcloud secrets describe pincho-token --project=pincho-app-dev
 ```
 
 Cloud Build access is granted via Terraform in `frontend/terraform/modules/cloudbuild/main.tf`:
@@ -91,7 +91,7 @@ Cloud Build access is granted via Terraform in `frontend/terraform/modules/cloud
 locals {
   secrets = [
     # ... other secrets ...
-    "wirepusher-token"
+    "pincho-token"
   ]
 }
 ```
@@ -102,7 +102,7 @@ The triggers should already exist from Terraform:
 
 ```bash
 # List triggers
-gcloud builds triggers list --project=wirepusher-dev --region=us-central1
+gcloud builds triggers list --project=pincho-dev --region=us-central1
 
 # Expected triggers:
 # - Main branch trigger: Runs on push to main (tests only)
@@ -125,7 +125,7 @@ git push origin main
 
 **Expected**: Cloud Build runs tests, format check, vet, and build verification. No release created.
 
-Monitor: https://console.cloud.google.com/cloud-build/builds?project=wirepusher-dev
+Monitor: https://console.cloud.google.com/cloud-build/builds?project=pincho-dev
 
 ### Test 2: Release Tag (Full Pipeline)
 
@@ -138,7 +138,7 @@ git push origin v0.1.0-alpha.1
 **Expected**:
 1. Cloud Build runs all tests
 2. GoReleaser builds 7 platform binaries
-3. GitLab release created at: https://gitlab.com/wirepusher/wirepusher-cli/-/releases
+3. GitLab release created at: https://gitlab.com/pincho/pincho-cli/-/releases
 
 ### Cleanup Test Release
 
@@ -196,12 +196,12 @@ go tool cover -html=coverage.out
 
 1. Verify secret exists:
    ```bash
-   gcloud secrets describe gitlab-api-token-cloudbuild --project=wirepusher-dev
+   gcloud secrets describe gitlab-api-token-cloudbuild --project=pincho-dev
    ```
 
 2. Verify Cloud Build has access (should be via Terraform):
    ```bash
-   gcloud secrets get-iam-policy gitlab-api-token-cloudbuild --project=wirepusher-dev
+   gcloud secrets get-iam-policy gitlab-api-token-cloudbuild --project=pincho-dev
    ```
 
 3. Check secret reference in `cloudbuild.yaml`:

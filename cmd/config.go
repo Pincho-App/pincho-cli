@@ -5,32 +5,32 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/wirepusher/cli/pkg/config"
+	"gitlab.com/pincho-app/pincho-cli/pkg/config"
 )
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Manage WirePusher CLI configuration",
-	Long: `Manage configuration settings for the WirePusher CLI.
+	Short: "Manage Pincho CLI configuration",
+	Long: `Manage configuration settings for the Pincho CLI.
 
-Configuration is stored in ~/.wirepusher/config.yaml and can be set, retrieved,
+Configuration is stored in ~/.pincho/config.yaml and can be set, retrieved,
 or listed using the subcommands.
 
 Priority order for configuration values:
   1. Command-line flags (--token)
-  2. Environment variables (WIREPUSHER_TOKEN)
-  3. Config file (~/.wirepusher/config.yaml)
+  2. Environment variables (PINCHO_TOKEN)
+  3. Config file (~/.pincho/config.yaml)
 
 Examples:
   # Set configuration values
-  wirepusher config set token wpt_abc123xyz
+  pincho config set token wpt_abc123xyz
 
   # Get a specific value
-  wirepusher config get token
+  pincho config get token
 
   # List all configuration
-  wirepusher config list
+  pincho config list
 `,
 }
 
@@ -41,16 +41,16 @@ var configSetCmd = &cobra.Command{
 	Long: `Set a configuration value and save it to the config file.
 
 Supported keys:
-  - token: Your WirePusher API token
+  - token: Your Pincho API token
   - timeout: Request timeout in seconds (default: 30)
   - max_retries: Maximum retry attempts (default: 3)
   - api_url: Custom API endpoint URL
 
 Examples:
-  wirepusher config set token wpt_abc123xyz
-  wirepusher config set timeout 60
-  wirepusher config set max_retries 5
-  wirepusher config set api_url https://custom.api.wirepusher.dev/send
+  pincho config set token wpt_abc123xyz
+  pincho config set timeout 60
+  pincho config set max_retries 5
+  pincho config set api_url https://api.pincho.app/send
 `,
 	Args: cobra.ExactArgs(2),
 	RunE: runConfigSet,
@@ -63,7 +63,7 @@ var configGetCmd = &cobra.Command{
 	Long: `Get a specific configuration value from the config file or environment.
 
 Example:
-  wirepusher config get token
+  pincho config get token
 `,
 	Args: cobra.ExactArgs(1),
 	RunE: runConfigGet,
@@ -76,7 +76,7 @@ var configListCmd = &cobra.Command{
 	Long: `List all configuration values from the config file.
 
 Example:
-  wirepusher config list
+  pincho config list
 `,
 	RunE: runConfigList,
 }
@@ -149,7 +149,7 @@ func runConfigList(cmd *cobra.Command, args []string) error {
 	if len(all) == 0 {
 		fmt.Println("No configuration set")
 		fmt.Println("\nTo get started:")
-		fmt.Println("  wirepusher config set token YOUR_TOKEN")
+		fmt.Println("  pincho config set token YOUR_TOKEN")
 		return nil
 	}
 

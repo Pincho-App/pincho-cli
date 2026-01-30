@@ -1,4 +1,4 @@
-// Package errors provides error handling and exit code management for WirePusher CLI.
+// Package errors provides error handling and exit code management for Pincho CLI.
 //
 // The package implements a structured error system with standardized exit codes
 // to enable better integration with CI/CD pipelines and automation workflows.

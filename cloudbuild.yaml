@@ -1,4 +1,4 @@
-# Cloud Build configuration for WirePusher CLI
+# Cloud Build configuration for Pincho CLI
 # Triggers:
 #   - Push to any branch: Runs tests, quality checks, and build verification
 #   - Push tag v*.*.*: Runs full release pipeline with GoReleaser
@@ -195,7 +195,7 @@ steps:
     id: 'notify-release'
     waitFor: ['release']
     entrypoint: 'sh'
-    secretEnv: ['WIREPUSHER_TOKEN']
+    secretEnv: ['PINCHO_TOKEN']
     args:
       - '-c'
       - |
@@ -206,11 +206,11 @@ steps:
         fi
 
         echo "=== Sending release notification via NotifAI ==="
-        curl -s -X POST https://api.wirepusher.dev/notifai \
-          -H "Authorization: Bearer $$WIREPUSHER_TOKEN" \
+        curl -s -X POST https://api.pincho.app/notifai \
+          -H "Authorization: Bearer $$PINCHO_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{
-            \"text\": \"WirePusher CLI $TAG_NAME released successfully to GitLab. 7 platform binaries available for download. Install via curl -sSL install script or download from https://gitlab.com/wirepusher/wirepusher-cli/-/releases/$TAG_NAME\",
+            \"text\": \"Pincho CLI $TAG_NAME released successfully to GitLab. 7 platform binaries available for download. Install via curl -sSL install script or download from https://gitlab.com/pincho-app/pincho-cli/-/releases/$TAG_NAME\",
             \"type\": \"release\"
           }"
 
@@ -222,8 +222,8 @@ availableSecrets:
   secretManager:
     - versionName: projects/$PROJECT_ID/secrets/gitlab-api-token-cloudbuild/versions/latest
       env: 'GITLAB_TOKEN'
-    - versionName: projects/$PROJECT_ID/secrets/wirepusher-token/versions/latest
-      env: 'WIREPUSHER_TOKEN'
+    - versionName: projects/$PROJECT_ID/secrets/pincho-token/versions/latest
+      env: 'PINCHO_TOKEN'
 
 # Build options
 options:

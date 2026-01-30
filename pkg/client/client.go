@@ -1,4 +1,4 @@
-// Package client provides a Go client for the WirePusher API.
+// Package client provides a Go client for the Pincho API.
 //
 // The client supports two main endpoints:
 //   - /send: Send push notifications with full control over title, message, and parameters
@@ -43,17 +43,17 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.com/wirepusher/cli/pkg/crypto"
-	"gitlab.com/wirepusher/cli/pkg/errors"
-	"gitlab.com/wirepusher/cli/pkg/validation"
+	"gitlab.com/pincho-app/pincho-cli/pkg/crypto"
+	"gitlab.com/pincho-app/pincho-cli/pkg/errors"
+	"gitlab.com/pincho-app/pincho-cli/pkg/validation"
 )
 
 const (
-	// DefaultAPIURL is the default WirePusher API endpoint (for send)
-	DefaultAPIURL = "https://api.wirepusher.dev/send"
+	// DefaultAPIURL is the default Pincho API endpoint (for send)
+	DefaultAPIURL = "https://api.pincho.app/send"
 
-	// DefaultNotifAIURL is the default WirePusher NotifAI API endpoint
-	DefaultNotifAIURL = "https://api.wirepusher.dev/notifai"
+	// DefaultNotifAIURL is the default Pincho NotifAI API endpoint
+	DefaultNotifAIURL = "https://api.pincho.app/notifai"
 
 	// DefaultTimeout is the default HTTP client timeout
 	DefaultTimeout = 30 * time.Second
@@ -68,7 +68,7 @@ const (
 	Version = "1.0.0"
 )
 
-// Client represents a WirePusher API client
+// Client represents a Pincho API client
 type Client struct {
 	APIURL         string
 	HTTPClient     *http.Client
@@ -76,7 +76,7 @@ type Client struct {
 	MaxRetries     int           // Maximum number of retry attempts (uses DefaultMaxRetries if zero)
 	InitialBackoff time.Duration // Initial backoff duration for retries (uses DefaultInitialBackoff if zero)
 	Token          string        // API token for authentication (sent as Bearer token in Authorization header)
-	UserAgent      string        // User-Agent header value (defaults to wirepusher-cli/{version})
+	UserAgent      string        // User-Agent header value (defaults to pincho-cli/{version})
 }
 
 // SendOptions contains parameters for sending a notification
@@ -183,14 +183,14 @@ type ErrorDetails struct {
 	Param   string `json:"param,omitempty"`
 }
 
-// New creates a new WirePusher client with default settings
+// New creates a new Pincho client with default settings
 func New() *Client {
 	return &Client{
 		APIURL:         DefaultAPIURL,
 		Timeout:        DefaultTimeout,
 		MaxRetries:     DefaultMaxRetries,
 		InitialBackoff: DefaultInitialBackoff,
-		UserAgent:      fmt.Sprintf("wirepusher-cli/%s", Version),
+		UserAgent:      fmt.Sprintf("pincho-cli/%s", Version),
 		HTTPClient: &http.Client{
 			Timeout: DefaultTimeout,
 		},
@@ -372,7 +372,7 @@ func (c *Client) doRequestWithRetry(ctx context.Context, req *http.Request) (*ht
 	return nil, errors.NewServerErrorWithStatus(fmt.Sprintf("request failed after %d retries", maxRetries), lastStatusCode)
 }
 
-// Send sends a notification via the WirePusher v1 API
+// Send sends a notification via the Pincho API
 // Returns SendResult with response details and rate limit info, or error if failed
 func (c *Client) Send(ctx context.Context, opts *SendOptions) (*SendResult, error) {
 	// Validate required fields
@@ -520,7 +520,7 @@ func (c *Client) Send(ctx context.Context, opts *SendOptions) (*SendResult, erro
 	}, nil
 }
 
-// NotifAI sends a text-to-notification request via the WirePusher NotifAI API
+// NotifAI sends a text-to-notification request via the Pincho NotifAI API
 // Returns NotifAIResult with response details and rate limit info, or error if failed
 func (c *Client) NotifAI(ctx context.Context, opts *NotifAIOptions) (*NotifAIResult, error) {
 	// Validate required fields

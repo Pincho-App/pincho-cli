@@ -1,10 +1,10 @@
-# CLAUDE.md - WirePusher CLI
+# CLAUDE.md - Pincho CLI
 
-Context file for AI-powered development assistance on the WirePusher CLI project.
+Context file for AI-powered development assistance on the Pincho CLI project.
 
 ## Project Overview
 
-**WirePusher CLI** is a command-line tool for sending push notifications via [WirePusher](https://wirepusher.dev).
+**Pincho CLI** is a command-line tool for sending push notifications via [Pincho](https://pincho.app).
 
 - **Language**: Go 1.23+
 - **Framework**: Cobra (CLI) + Viper (config)
@@ -14,7 +14,7 @@ Context file for AI-powered development assistance on the WirePusher CLI project
 ## Architecture
 
 ```
-wirepusher-cli/
+pincho-cli/
 ├── main.go                 # Entry point
 ├── cmd/                    # CLI commands (Cobra)
 │   ├── root.go            # Root command, global flags
@@ -24,7 +24,7 @@ wirepusher-cli/
 │   ├── version.go         # Version info
 │   └── helpers.go         # Shared utilities
 ├── pkg/
-│   ├── client/            # WirePusher API client
+│   ├── client/            # Pincho API client
 │   │   ├── client.go      # HTTP client with retry logic
 │   │   └── client_test.go
 │   ├── config/            # Configuration management
@@ -51,7 +51,7 @@ wirepusher-cli/
 ### send
 Send push notifications with full control:
 ```bash
-wirepusher send "Title" "Message" [flags]
+pincho send "Title" "Message" [flags]
 ```
 
 **Key features:**
@@ -64,7 +64,7 @@ wirepusher send "Title" "Message" [flags]
 ### notifai
 AI-powered notifications (Gemini converts free-form text to structured notifications):
 ```bash
-wirepusher notifai "deployment finished, v2.1.3 is live" [flags]
+pincho notifai "deployment finished, v2.1.3 is live" [flags]
 ```
 
 AI generates title, message, tags, and action URL automatically.
@@ -72,18 +72,18 @@ AI generates title, message, tags, and action URL automatically.
 ### config
 Manage persistent configuration:
 ```bash
-wirepusher config set <key> <value>
-wirepusher config get <key>
-wirepusher config list
+pincho config set <key> <value>
+pincho config get <key>
+pincho config list
 ```
 
-Stores in `~/.wirepusher/config.yaml` with secure permissions (0700 dir, 0600 file).
+Stores in `~/.pincho/config.yaml` with secure permissions (0700 dir, 0600 file).
 
 ## Configuration Priority
 
 1. **Command-line flags** (highest)
-2. **Environment variables** (WIREPUSHER_TOKEN, etc.)
-3. **Config file** (`~/.wirepusher/config.yaml`)
+2. **Environment variables** (PINCHO_TOKEN, etc.)
+3. **Config file** (`~/.pincho/config.yaml`)
 4. **Defaults** (lowest)
 
 **Supported config keys:**
@@ -119,7 +119,7 @@ Stores in `~/.wirepusher/config.yaml` with secure permissions (0700 dir, 0600 fi
 - **Algorithm**: AES-128-CBC
 - **Key derivation**: SHA1 (for mobile app compatibility)
 - **Scope**: Only message body encrypted
-- **Password**: Must match type config in WirePusher app
+- **Password**: Must match type config in Pincho app
 
 ### Verbose Logging
 - `--verbose` flag enables debug output
@@ -130,12 +130,12 @@ Stores in `~/.wirepusher/config.yaml` with secure permissions (0700 dir, 0600 fi
 
 ### Building
 ```bash
-go build -o wirepusher
+go build -o pincho
 ```
 
 With version info:
 ```bash
-go build -ldflags="-X 'gitlab.com/wirepusher/cli/cmd.version=1.0.0'" -o wirepusher
+go build -ldflags="-X 'gitlab.com/pincho-app/pincho-cli/cmd.version=1.0.0'" -o pincho
 ```
 
 ### Testing
@@ -173,7 +173,7 @@ No runtime dependencies. Compiles to single static binary.
 ### Authentication
 Token via:
 - `--token` flag
-- `WIREPUSHER_TOKEN` env var
+- `PINCHO_TOKEN` env var
 - `token` config key
 
 ### Response Format
@@ -189,31 +189,6 @@ Structured JSON with nested error details:
   }
 }
 ```
-
-## Recent Changes
-
-**Phase 1 (Critical Fixes):**
-- Fixed broken client tests
-- Fixed config permissions (0755 → 0700)
-- Added 42 comprehensive tag validation tests
-- Extracted duplicate helper functions
-
-**Phase 2 (Error Handling & Logging):**
-- Implemented exit codes (0, 1, 2, 3)
-- Added verbose logging system
-- Improved error messages with actionable suggestions
-- Added config package tests (11 tests)
-
-**Phase 3 (Reliability & Documentation):**
-- Added timeout configuration (flag, env var, config)
-- Implemented automatic retry with exponential backoff
-- Added package-level documentation for all 7 packages
-- Created ARCHITECTURE.md
-
-**Config Enhancements:**
-- Added config support for timeout and max_retries
-- Added default_type and default_tags config support
-- Intelligent tag merging (flags first, then config defaults)
 
 ## Testing Philosophy
 
@@ -262,14 +237,14 @@ go clean -cache          # Clear build cache
 
 ## Links
 
-- **Repository**: https://gitlab.com/wirepusher/wirepusher-cli
-- **Issues**: https://gitlab.com/wirepusher/wirepusher-cli/-/issues
-- **API Docs**: https://wirepusher.com/docs
-- **App**: https://wirepusher.dev
+- **Repository**: https://gitlab.com/pincho-app/pincho-cli
+- **Issues**: https://gitlab.com/pincho-app/pincho-cli/-/issues
+- **API Docs**: https://pincho.app/help
+- **App**: https://pincho.app
 
 ## Notes for AI Assistants
 
-- **Simplicity is key**: CLI should be as simple as the WirePusher app
+- **Simplicity is key**: CLI should be as simple as the Pincho app
 - **No hardcoded limits**: Don't document API limits (they may change)
 - **Config is optional**: CLI works with zero setup (just pass `--token`)
 - **Flags override everything**: Maintain priority chain (flag > env > config > default)

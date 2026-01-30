@@ -2,18 +2,18 @@
 # Configuration management example
 
 # Set up configuration (do this once)
-wirepusher config set token "wpt_your_token_here"
+pincho config set token "wpt_your_token_here"
 
 # View configuration
-wirepusher config list
+pincho config list
 
 # Get specific values
-wirepusher config get token
+pincho config get token
 
 # Now you can send without specifying token each time
-wirepusher send "Test" "Configuration is working"
+pincho send "Test" "Configuration is working"
 
 # You can still override config with flags if needed
-wirepusher send "Test" "Using different credentials" \
+pincho send "Test" "Using different credentials" \
   --token "temporary-token" \
   

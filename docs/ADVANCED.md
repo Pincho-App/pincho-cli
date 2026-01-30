@@ -1,6 +1,6 @@
 # Advanced Usage
 
-This document covers advanced features of the WirePusher CLI.
+This document covers advanced features of the Pincho CLI.
 
 ## Table of Contents
 
@@ -21,7 +21,7 @@ This document covers advanced features of the WirePusher CLI.
 ### send
 
 ```bash
-wirepusher send <title> [message] [flags]
+pincho send <title> [message] [flags]
 ```
 
 **Flags:**
@@ -39,11 +39,11 @@ wirepusher send <title> [message] [flags]
 
 **Examples:**
 ```bash
-wirepusher send "Deploy" "v1.2.3 deployed"
-wirepusher send "Alert" "CPU high" --type alert --tag production
-wirepusher send "Secure" "Encrypted" --encryption-password "secret"
-echo "Output" | wirepusher send "Logs" --stdin
-wirepusher send "Deploy" --json  # Machine-readable output
+pincho send "Deploy" "v1.2.3 deployed"
+pincho send "Alert" "CPU high" --type alert --tag production
+pincho send "Secure" "Encrypted" --encryption-password "secret"
+echo "Output" | pincho send "Logs" --stdin
+pincho send "Deploy" --json  # Machine-readable output
 ```
 
 ### notifai
@@ -51,7 +51,7 @@ wirepusher send "Deploy" --json  # Machine-readable output
 AI-powered notifications using Gemini:
 
 ```bash
-wirepusher notifai <text> [flags]
+pincho notifai <text> [flags]
 ```
 
 **Flags:**
@@ -65,9 +65,9 @@ wirepusher notifai <text> [flags]
 
 **Examples:**
 ```bash
-wirepusher notifai "deployment finished, v2.1.3 is live on prod"
-wirepusher notifai "cpu at 95% on web-3" --type alert
-cat log.txt | wirepusher notifai --stdin
+pincho notifai "deployment finished, v2.1.3 is live on prod"
+pincho notifai "cpu at 95% on web-3" --type alert
+cat log.txt | pincho notifai --stdin
 ```
 
 ### config
@@ -75,22 +75,22 @@ cat log.txt | wirepusher notifai --stdin
 Manage persistent configuration:
 
 ```bash
-wirepusher config set <key> <value>
-wirepusher config get <key>
-wirepusher config list
+pincho config set <key> <value>
+pincho config get <key>
+pincho config list
 ```
 
 **Supported keys:**
 
 | Key | Description | Example |
 |-----|-------------|---------|
-| `token` | API token | `wirepusher config set token abc123` |
-| `api_url` | Custom API endpoint | `wirepusher config set api_url https://custom.com/send` |
-| `timeout` | Request timeout (seconds) | `wirepusher config set timeout 60` |
-| `max_retries` | Max retry attempts | `wirepusher config set max_retries 5` |
-| `default_type` | Default notification type | `wirepusher config set default_type deploy` |
+| `token` | API token | `pincho config set token abc123` |
+| `api_url` | Custom API endpoint | `pincho config set api_url https://custom.com/send` |
+| `timeout` | Request timeout (seconds) | `pincho config set timeout 60` |
+| `max_retries` | Max retry attempts | `pincho config set max_retries 5` |
+| `default_type` | Default notification type | `pincho config set default_type deploy` |
 
-**Note:** `default_tags` must be set directly in `~/.wirepusher/config.yaml` (YAML array):
+**Note:** `default_tags` must be set directly in `~/.pincho/config.yaml` (YAML array):
 
 ```yaml
 default_tags:
@@ -101,7 +101,7 @@ default_tags:
 ### version
 
 ```bash
-wirepusher version
+pincho version
 ```
 
 Shows version, commit hash, and build date.
@@ -130,7 +130,7 @@ CLI serves interactive users who benefit from fast-fail:
 - No surprise failures after network round-trip
 - Matches documented API limits upfront
 
-**Note:** WirePusher libraries (Go, Python, JS) perform minimal validation and let the API be the source of truth. This is intentional - CLI serves interactive users, libraries serve programmatic integrations.
+**Note:** Pincho libraries (Go, Python, JS) perform minimal validation and let the API be the source of truth. This is intentional - CLI serves interactive users, libraries serve programmatic integrations.
 
 ## Retry Logic
 
@@ -167,21 +167,21 @@ For rate limit errors (429), the CLI uses:
 
 ```bash
 # Set max retries (default: 3)
-wirepusher send "Title" "Message" --max-retries 5
+pincho send "Title" "Message" --max-retries 5
 
 # Disable retries
-wirepusher send "Title" "Message" --max-retries 0
+pincho send "Title" "Message" --max-retries 0
 
 # Configure via environment variable
-WIREPUSHER_MAX_RETRIES=5 wirepusher send "Title" "Message"
+PINCHO_MAX_RETRIES=5 pincho send "Title" "Message"
 
 # Configure permanently
-wirepusher config set max_retries 5
+pincho config set max_retries 5
 ```
 
 ## Rate Limits
 
-The WirePusher API enforces rate limits:
+The Pincho API enforces rate limits:
 
 - **Send endpoint**: 30 requests per hour per token
 - **NotifAI endpoint**: 50 requests per hour per token
@@ -209,7 +209,7 @@ The CLI respects the `Retry-After` header and waits appropriately.
 Use verbose mode to see rate limit information:
 
 ```bash
-wirepusher send "Title" "Message" --verbose
+pincho send "Title" "Message" --verbose
 # Output includes:
 # Rate Limit: 25/30 remaining (resets at 2024-01-15T10:00:00Z)
 ```
@@ -236,7 +236,7 @@ The CLI supports AES-128-CBC encryption for message content.
 
 ```bash
 # Encrypt message with password
-wirepusher send "Secure Alert" "Sensitive data" \
+pincho send "Secure Alert" "Sensitive data" \
   --encryption-password "your-secret-password" \
   --type secure
 ```
@@ -250,9 +250,9 @@ This allows the mobile app to filter and categorize notifications while keeping 
 
 ### Mobile App Configuration
 
-The encryption password must match the type configuration in your WirePusher mobile app:
+The encryption password must match the type configuration in your Pincho mobile app:
 
-1. Open WirePusher app
+1. Open Pincho app
 2. Go to Settings
 3. Select the notification type (e.g., "secure")
 4. Enter the same encryption password
@@ -271,54 +271,54 @@ The encryption password must match the type configuration in your WirePusher mob
 Configuration values are resolved in this order (highest priority first):
 
 1. **Command-line flags** (`--token`, `--timeout`)
-2. **Environment variables** (`WIREPUSHER_TOKEN`, `WIREPUSHER_TIMEOUT`)
-3. **Config file** (`~/.wirepusher/config.yaml`)
+2. **Environment variables** (`PINCHO_TOKEN`, `PINCHO_TIMEOUT`)
+3. **Config file** (`~/.pincho/config.yaml`)
 4. **Defaults** (built into the CLI)
 
 ### Config File Location
 
 ```bash
 # Default location
-~/.wirepusher/config.yaml
+~/.pincho/config.yaml
 
 # Check path
-wirepusher config list
-# Configuration from /Users/you/.wirepusher/config.yaml:
+pincho config list
+# Configuration from /Users/you/.pincho/config.yaml:
 ```
 
 ### Available Settings
 
 ```bash
 # API token (required)
-wirepusher config set token wpt_abc123xyz
+pincho config set token wpt_abc123xyz
 
 # Request timeout in seconds (default: 30)
-wirepusher config set timeout 60
+pincho config set timeout 60
 
 # Max retry attempts (default: 3)
-wirepusher config set max_retries 5
+pincho config set max_retries 5
 
 # Custom API URL (for testing)
-wirepusher config set api_url https://staging.api.wirepusher.dev/send
+pincho config set api_url https://staging.api.pincho.dev/send
 ```
 
 ### Environment Variables
 
 ```bash
-WIREPUSHER_TOKEN       # API token
-WIREPUSHER_TIMEOUT     # Request timeout (seconds)
-WIREPUSHER_MAX_RETRIES # Max retry attempts
-WIREPUSHER_API_URL     # Custom API endpoint
+PINCHO_TOKEN       # API token
+PINCHO_TIMEOUT     # Request timeout (seconds)
+PINCHO_MAX_RETRIES # Max retry attempts
+PINCHO_API_URL     # Custom API endpoint
 ```
 
 ### Config File Format
 
 ```yaml
-# ~/.wirepusher/config.yaml
+# ~/.pincho/config.yaml
 token: wpt_abc123xyz
 timeout: "60"
 max_retries: "5"
-api_url: https://api.wirepusher.dev/send
+api_url: https://api.pincho.dev/send
 default_type: alert
 default_tags:
   - production
@@ -339,7 +339,7 @@ default_tags:
 
 When you run:
 ```bash
-wirepusher send "Build" "Complete" --tag production
+pincho send "Build" "Complete" --tag production
 ```
 
 The notification will have tags: `["production", "automated", "ci-cd"]`
@@ -359,7 +359,7 @@ The CLI uses specific exit codes for CI/CD integration:
 
 ```bash
 #!/bin/bash
-wirepusher send "Deploy" "Version $VERSION deployed"
+pincho send "Deploy" "Version $VERSION deployed"
 exit_code=$?
 
 case $exit_code in
@@ -387,12 +387,12 @@ esac
 # GitLab CI
 notify_success:
   script:
-    - wirepusher send "Deploy Success" "Version $CI_COMMIT_TAG"
+    - pincho send "Deploy Success" "Version $CI_COMMIT_TAG"
   allow_failure: false  # Pipeline fails if notification fails
 
 notify_failure:
   script:
-    - wirepusher send "Deploy Failed" "Pipeline $CI_PIPELINE_ID failed" || true
+    - pincho send "Deploy Failed" "Pipeline $CI_PIPELINE_ID failed" || true
   when: on_failure
   allow_failure: true  # Don't double-fail
 ```
@@ -402,7 +402,7 @@ notify_failure:
 Enable detailed logging to debug issues:
 
 ```bash
-wirepusher send "Title" "Message" --verbose
+pincho send "Title" "Message" --verbose
 ```
 
 ### Output Includes
@@ -420,7 +420,7 @@ wirepusher send "Title" "Message" --verbose
 ```
 [VERBOSE] Verbose logging enabled
 [VERBOSE] Using token: wpt_abc1...
-[VERBOSE] Using API URL: https://api.wirepusher.dev/send
+[VERBOSE] Using API URL: https://api.pincho.dev/send
 [VERBOSE] Using timeout: 30s
 [VERBOSE] Using max retries: 3
 [VERBOSE] Title: Deploy Complete
@@ -444,13 +444,13 @@ All verbose logging goes to stderr, keeping stdout clean for JSON output:
 
 ```bash
 # Capture JSON, ignore verbose
-wirepusher send "Title" "Message" --json --verbose 2>/dev/null
+pincho send "Title" "Message" --json --verbose 2>/dev/null
 
 # Log verbose to file
-wirepusher send "Title" "Message" --verbose 2>debug.log
+pincho send "Title" "Message" --verbose 2>debug.log
 
 # See both in terminal
-wirepusher send "Title" "Message" --verbose 2>&1 | tee log.txt
+pincho send "Title" "Message" --verbose 2>&1 | tee log.txt
 ```
 
 ## Advanced Examples
@@ -465,7 +465,7 @@ THRESHOLD=90
 USAGE=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
 
 if [ "$USAGE" -gt "$THRESHOLD" ]; then
-  wirepusher send \
+  pincho send \
     "Disk Alert" \
     "Disk usage at ${USAGE}% on $(hostname)" \
     --type alert \
@@ -481,13 +481,13 @@ fi
 # Notify on build completion
 
 if make build; then
-  wirepusher send \
+  pincho send \
     "Build Success" \
     "$(git rev-parse --short HEAD) built successfully" \
     --tag build \
     --tag success
 else
-  wirepusher send \
+  pincho send \
     "Build Failed" \
     "Build failed for $(git rev-parse --short HEAD)" \
     --type alert \
@@ -504,7 +504,7 @@ fi
 # Send encrypted system status
 
 STATUS=$(top -l 1 | head -10)
-wirepusher send \
+pincho send \
   "System Status" \
   "$STATUS" \
   --encryption-password "$ENCRYPTION_KEY" \
@@ -514,14 +514,14 @@ wirepusher send \
 ## Building from Source
 
 ```bash
-git clone https://gitlab.com/wirepusher/wirepusher-cli.git
-cd wirepusher-cli
-go build -o wirepusher
+git clone https://gitlab.com/pincho/pincho-cli.git
+cd pincho-cli
+go build -o pincho
 ```
 
 With version info:
 ```bash
-go build -ldflags="-X 'gitlab.com/wirepusher/cli/cmd.version=1.0.0'" -o wirepusher
+go build -ldflags="-X 'gitlab.com/pincho/cli/cmd.version=1.0.0'" -o pincho
 ```
 
 ## Testing

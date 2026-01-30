@@ -1,4 +1,4 @@
-module gitlab.com/wirepusher/cli
+module gitlab.com/pincho-app/pincho-cli
 
 go 1.23.2
 
