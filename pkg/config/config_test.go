@@ -19,11 +19,15 @@ func setupTestEnv(t *testing.T) (string, func()) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 
-	// Save original home
+	// Save original home and env vars
 	originalHome := os.Getenv("HOME")
+	originalToken := os.Getenv("PINCHO_TOKEN")
 
 	// Set HOME to temp directory
 	os.Setenv("HOME", tmpDir)
+
+	// Clear PINCHO_* env vars to prevent interference with tests
+	os.Unsetenv("PINCHO_TOKEN")
 
 	// Reset viper between tests
 	viper.Reset()
@@ -31,6 +35,9 @@ func setupTestEnv(t *testing.T) (string, func()) {
 	// Cleanup function
 	cleanup := func() {
 		os.Setenv("HOME", originalHome)
+		if originalToken != "" {
+			os.Setenv("PINCHO_TOKEN", originalToken)
+		}
 		os.RemoveAll(tmpDir)
 		viper.Reset()
 	}
