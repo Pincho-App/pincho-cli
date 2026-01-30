@@ -132,7 +132,7 @@ release:
   variables:
     GIT_DEPTH: 0  # Fetch all history for GoReleaser
   rules:
-    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-alpha\.[0-9]+|-beta\.[0-9]+)?$/
   script:
     - echo "=== Git tag detected:$CI_COMMIT_TAG ==="
     - echo "✓ Tag format valid"
@@ -155,7 +155,7 @@ notify:
   stage: notify
   image: curlimages/curl:latest
   rules:
-    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-alpha\.[0-9]+|-beta\.[0-9]+)?$/
   script:
     - echo "=== Sending release notification via NotifAI ==="
     - 'curl -s -X POST https://api.pincho.app/notifai -H "Authorization: Bearer $PINCHO_TOKEN" -H "Content-Type: application/json" -d "{\"text\": \"Pincho CLI $CI_COMMIT_TAG released successfully to GitLab. 7 platform binaries available for download.\", \"type\": \"release\"}"'
