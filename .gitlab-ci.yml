@@ -36,7 +36,7 @@ lint:format:
     GOPATH: $CI_PROJECT_DIR/.go
   script:
     - echo "=== Checking code formatting ==="
-    - UNFORMATTED=$(gofmt -l .)
+    - UNFORMATTED=$(find . -name '*.go' -not -path './.go/*' | xargs gofmt -l)
     - if [ -n "$UNFORMATTED" ]; then echo "❌ The following files are not formatted:" && echo "$UNFORMATTED" && echo "Run 'gofmt -w .' to fix formatting" && exit 1; fi
     - echo "✓ All files are properly formatted"
 
