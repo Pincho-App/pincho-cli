@@ -37,14 +37,7 @@ lint:format:
   script:
     - echo "=== Checking code formatting ==="
     - UNFORMATTED=$(gofmt -l .)
-    - |
-      if [ -n "$UNFORMATTED" ]; then
-        echo "❌ The following files are not formatted:"
-        echo "$UNFORMATTED"
-        echo ""
-        echo "Run 'gofmt -w .' to fix formatting"
-        exit 1
-      fi
+    - if [ -n "$UNFORMATTED" ]; then echo "❌ The following files are not formatted:" && echo "$UNFORMATTED" && echo "Run 'gofmt -w .' to fix formatting" && exit 1; fi
     - echo "✓ All files are properly formatted"
 
 lint:vet:
@@ -88,28 +81,16 @@ test:
     - echo "=== Checking test coverage ==="
     - go tool cover -func=coverage.out | tail -10
     - COV=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
-    - echo ""
-    - echo "Total coverage: ${COV}%"
-    # Enforce 30% minimum coverage for overall project
-    - |
-      if [ $(echo "$COV < 30" | bc) -eq 1 ]; then
-        echo "❌ Coverage ${COV}% is below 30% threshold"
-        exit 1
-      fi
+    - echo "Total coverage:${COV}%"
+    - if [ $(echo "$COV < 30" | bc) -eq 1 ]; then echo "❌ Coverage ${COV}% is below 30% threshold" && exit 1; fi
     - echo "✓ Coverage meets 30% threshold"
-    # Check pkg layer coverage separately (higher standard)
-    - echo ""
     - echo "=== Checking pkg layer coverage ==="
     - go test -coverprofile=pkg_coverage.out ./pkg/...
     - PKG_COV=$(go tool cover -func=pkg_coverage.out | grep total | awk '{print $3}' | sed 's/%//')
-    - echo "Pkg layer coverage: ${PKG_COV}%"
-    - |
-      if [ $(echo "$PKG_COV < 55" | bc) -eq 1 ]; then
-        echo "❌ Pkg coverage ${PKG_COV}% is below 55% threshold"
-        exit 1
-      fi
+    - echo "Pkg layer coverage:${PKG_COV}%"
+    - if [ $(echo "$PKG_COV < 55" | bc) -eq 1 ]; then echo "❌ Pkg coverage ${PKG_COV}% is below 55% threshold" && exit 1; fi
     - echo "✓ Pkg layer coverage meets 55% threshold"
-  coverage: '/Total coverage: (\d+\.?\d*)%/'
+  coverage: '/Total coverage:(\d+\.?\d*)%/'
   artifacts:
     reports:
       coverage_report:
@@ -132,28 +113,13 @@ build:
     - echo "=== Downloading dependencies ==="
     - go mod download
     - echo "=== Verifying builds for all platforms ==="
-    - echo "Building linux/amd64..."
-    - GOOS=linux GOARCH=amd64 go build -o /dev/null .
-    - echo "✓ linux/amd64"
-    - echo "Building linux/arm64..."
-    - GOOS=linux GOARCH=arm64 go build -o /dev/null .
-    - echo "✓ linux/arm64"
-    - echo "Building linux/arm (v7)..."
-    - GOOS=linux GOARCH=arm GOARM=7 go build -o /dev/null .
-    - echo "✓ linux/arm"
-    - echo "Building darwin/amd64..."
-    - GOOS=darwin GOARCH=amd64 go build -o /dev/null .
-    - echo "✓ darwin/amd64"
-    - echo "Building darwin/arm64..."
-    - GOOS=darwin GOARCH=arm64 go build -o /dev/null .
-    - echo "✓ darwin/arm64"
-    - echo "Building windows/amd64..."
-    - GOOS=windows GOARCH=amd64 go build -o /dev/null .
-    - echo "✓ windows/amd64"
-    - echo "Building windows/arm64..."
-    - GOOS=windows GOARCH=arm64 go build -o /dev/null .
-    - echo "✓ windows/arm64"
-    - echo ""
+    - echo "Building linux/amd64..." && GOOS=linux GOARCH=amd64 go build -o /dev/null . && echo "✓ linux/amd64"
+    - echo "Building linux/arm64..." && GOOS=linux GOARCH=arm64 go build -o /dev/null . && echo "✓ linux/arm64"
+    - echo "Building linux/arm (v7)..." && GOOS=linux GOARCH=arm GOARM=7 go build -o /dev/null . && echo "✓ linux/arm"
+    - echo "Building darwin/amd64..." && GOOS=darwin GOARCH=amd64 go build -o /dev/null . && echo "✓ darwin/amd64"
+    - echo "Building darwin/arm64..." && GOOS=darwin GOARCH=arm64 go build -o /dev/null . && echo "✓ darwin/arm64"
+    - echo "Building windows/amd64..." && GOOS=windows GOARCH=amd64 go build -o /dev/null . && echo "✓ windows/amd64"
+    - echo "Building windows/arm64..." && GOOS=windows GOARCH=arm64 go build -o /dev/null . && echo "✓ windows/arm64"
     - echo "✓ All platform builds verified"
 
 # =============================================================================
@@ -168,9 +134,8 @@ release:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
   script:
-    - echo "=== Git tag detected: $CI_COMMIT_TAG ==="
+    - echo "=== Git tag detected:$CI_COMMIT_TAG ==="
     - echo "✓ Tag format valid"
-    - echo ""
     - echo "=== Verifying required files ==="
     - test -f go.mod && echo "✓ go.mod exists" || (echo "❌ go.mod missing" && exit 1)
     - test -f go.sum && echo "✓ go.sum exists" || (echo "❌ go.sum missing" && exit 1)
@@ -178,10 +143,8 @@ release:
     - test -f LICENSE && echo "✓ LICENSE exists" || (echo "❌ LICENSE missing" && exit 1)
     - test -f CHANGELOG.md && echo "✓ CHANGELOG.md exists" || (echo "❌ CHANGELOG.md missing" && exit 1)
     - test -f .goreleaser.yml && echo "✓ .goreleaser.yml exists" || (echo "❌ .goreleaser.yml missing" && exit 1)
-    - echo ""
     - echo "=== Running GoReleaser ==="
     - goreleaser release --clean
-    - echo ""
     - echo "✓ Release $CI_COMMIT_TAG published successfully to GitLab"
 
 # =============================================================================
@@ -195,13 +158,5 @@ notify:
     - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
   script:
     - echo "=== Sending release notification via NotifAI ==="
-    - |
-      curl -s -X POST https://api.pincho.app/notifai \
-        -H "Authorization: Bearer $PINCHO_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d "{
-          \"text\": \"Pincho CLI $CI_COMMIT_TAG released successfully to GitLab. 7 platform binaries available for download. Install via curl -sSL install script or download from https://gitlab.com/pincho-app/pincho-cli/-/releases/$CI_COMMIT_TAG\",
-          \"type\": \"release\"
-        }"
-    - echo ""
+    - 'curl -s -X POST https://api.pincho.app/notifai -H "Authorization: Bearer $PINCHO_TOKEN" -H "Content-Type: application/json" -d "{\"text\": \"Pincho CLI $CI_COMMIT_TAG released successfully to GitLab. 7 platform binaries available for download.\", \"type\": \"release\"}"'
     - echo "✓ Release notification sent via NotifAI"
