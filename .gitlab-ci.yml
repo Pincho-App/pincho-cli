@@ -128,7 +128,9 @@ build:
 
 release:
   stage: release
-  image: goreleaser/goreleaser:v2.5.1
+  image:
+    name: goreleaser/goreleaser:v2.5.1
+    entrypoint: [""]
   variables:
     GIT_DEPTH: 0  # Fetch all history for GoReleaser
   rules:
