@@ -1,0 +1,32 @@
+#!/bin/sh
+# Pre-commit hook for Pincho CLI
+# Runs formatting and linting checks before allowing commits
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Check Go formatting
+echo "Checking code formatting..."
+UNFORMATTED=$(gofmt -l main.go cmd/ pkg/ 2>/dev/null || true)
+if [ -n "$UNFORMATTED" ]; then
+    echo "❌ The following files are not formatted:"
+    echo "$UNFORMATTED"
+    echo ""
+    echo "Run 'gofmt -w .' to fix formatting"
+    exit 1
+fi
+echo "✓ Code formatting OK"
+
+# Run go vet
+echo "Running static analysis..."
+go vet ./... || exit 1
+echo "✓ Static analysis OK"
+
+# Verify dependencies
+echo "Verifying dependencies..."
+go mod verify || exit 1
+echo "✓ Dependencies OK"
+
+echo ""
+echo "✓ All pre-commit checks passed"
