@@ -1,6 +1,6 @@
 #!/bin/sh
 # Pincho CLI Uninstaller
-# Usage: curl -sSL https://gitlab.com/pincho-app/pincho-cli/-/raw/main/uninstall.sh | sh
+# Usage: curl -sSL https://raw.githubusercontent.com/Pincho-App/pincho-cli/main/uninstall.sh | sh
 
 set -e
 

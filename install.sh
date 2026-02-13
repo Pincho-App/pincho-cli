@@ -1,10 +1,10 @@
 #!/bin/sh
 # Pincho CLI Installer
-# Usage: curl -sSL https://gitlab.com/pincho-app/pincho-cli/-/raw/main/install.sh | sh
+# Usage: curl -sSL https://raw.githubusercontent.com/Pincho-App/pincho-cli/main/install.sh | sh
 
 set -e
 
-REPO="pincho-app/pincho-cli"
+REPO="Pincho-App/pincho-cli"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 BINARY_NAME="pincho"
 PROJECT_NAME="pincho-cli"  # Name used in archive files
@@ -48,13 +48,13 @@ detect_arch() {
     esac
 }
 
-# Get latest version from GitLab API
+# Get latest version from GitHub API
 get_latest_version() {
     if command -v curl >/dev/null 2>&1; then
-        curl -sSL "https://gitlab.com/api/v4/projects/pincho-app%2Fpincho-cli/releases" | \
+        curl -sSL "https://api.github.com/repos/Pincho-App/pincho-cli/releases/latest" | \
             grep -o '"tag_name":"[^"]*"' | head -1 | cut -d'"' -f4
     elif command -v wget >/dev/null 2>&1; then
-        wget -qO- "https://gitlab.com/api/v4/projects/pincho-app%2Fpincho-cli/releases" | \
+        wget -qO- "https://api.github.com/repos/Pincho-App/pincho-cli/releases/latest" | \
             grep -o '"tag_name":"[^"]*"' | head -1 | cut -d'"' -f4
     else
         error "curl or wget is required"
@@ -88,7 +88,7 @@ main() {
     info "Fetching latest version..."
     VERSION=$(get_latest_version)
     if [ -z "$VERSION" ]; then
-        error "Failed to fetch latest version. Please check https://gitlab.com/${REPO}/-/releases"
+        error "Failed to fetch latest version. Please check https://github.com/${REPO}/releases"
     fi
     info "Latest version: ${VERSION}"
 
@@ -102,7 +102,7 @@ main() {
         ARCHIVE_NAME="${PROJECT_NAME}_${VERSION_NUM}_${OS}_${ARCH}.tar.gz"
     fi
 
-    DOWNLOAD_URL="https://gitlab.com/${REPO}/-/releases/${VERSION}/downloads/${ARCHIVE_NAME}"
+    DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE_NAME}"
 
     # Create temp directory
     TMP_DIR=$(mktemp -d)
@@ -114,7 +114,7 @@ main() {
     download "$DOWNLOAD_URL" "$ARCHIVE_PATH"
 
     if [ ! -f "$ARCHIVE_PATH" ]; then
-        error "Download failed. Please check https://gitlab.com/${REPO}/-/releases/${VERSION}"
+        error "Download failed. Please check https://github.com/${REPO}/releases/tag/${VERSION}"
     fi
 
     # Extract archive

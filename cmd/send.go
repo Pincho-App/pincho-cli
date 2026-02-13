@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/pincho-app/pincho-cli/pkg/client"
-	clierrors "gitlab.com/pincho-app/pincho-cli/pkg/errors"
-	"gitlab.com/pincho-app/pincho-cli/pkg/logging"
+	"github.com/Pincho-App/pincho-cli/pkg/client"
+	clierrors "github.com/Pincho-App/pincho-cli/pkg/errors"
+	"github.com/Pincho-App/pincho-cli/pkg/logging"
 )
 
 // sendCmd represents the send command

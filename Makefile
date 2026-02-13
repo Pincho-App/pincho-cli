@@ -5,7 +5,7 @@ BINARY_NAME=pincho
 VERSION?=dev
 COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
 DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS=-ldflags "-X 'gitlab.com/pincho-app/pincho-cli/cmd.version=$(VERSION)' -X 'gitlab.com/pincho-app/pincho-cli/cmd.commit=$(COMMIT)' -X 'gitlab.com/pincho-app/pincho-cli/cmd.date=$(DATE)'"
+LDFLAGS=-ldflags "-X 'github.com/Pincho-App/pincho-cli/cmd.version=$(VERSION)' -X 'github.com/Pincho-App/pincho-cli/cmd.commit=$(COMMIT)' -X 'github.com/Pincho-App/pincho-cli/cmd.date=$(DATE)'"
 
 # Build for current platform
 build:

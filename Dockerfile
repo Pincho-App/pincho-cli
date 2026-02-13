@@ -14,7 +14,7 @@ ARG VERSION=dev
 ARG COMMIT=none
 ARG DATE=unknown
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w -X 'gitlab.com/pincho-app/pincho-cli/cmd.version=${VERSION}' -X 'gitlab.com/pincho-app/pincho-cli/cmd.commit=${COMMIT}' -X 'gitlab.com/pincho-app/pincho-cli/cmd.date=${DATE}'" \
+    -ldflags="-s -w -X 'github.com/Pincho-App/pincho-cli/cmd.version=${VERSION}' -X 'github.com/Pincho-App/pincho-cli/cmd.commit=${COMMIT}' -X 'github.com/Pincho-App/pincho-cli/cmd.date=${DATE}'" \
     -o pincho main.go
 
 # Final minimal image

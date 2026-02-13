@@ -1,19 +1,19 @@
 # CI/CD Setup Guide
 
-Setup guide for Pincho CLI's CI/CD pipeline using Google Cloud Build and GoReleaser with GitLab releases.
+Setup guide for Pincho CLI's CI/CD pipeline using GitHub Actions and GoReleaser with GitHub releases.
 
 ## Overview
 
 The CI/CD pipeline is designed to:
 
 1. **On every push**: Run tests, linting, and build verification
-2. **On Git tags (v*.*.*)**: Build multi-platform binaries and create GitLab release
+2. **On Git tags (v*.*.*)**: Build multi-platform binaries and create GitHub release
 
 ## Prerequisites
 
 - Google Cloud Build triggers configured (via Terraform)
-- GitLab repository: `https://gitlab.com/pincho/pincho-cli`
-- GitLab Personal Access Token with `api` scope
+- GitHub repository: `https://github.com/Pincho-App/pincho-cli`
+- GitHub Personal Access Token or `GITHUB_TOKEN` (provided by GitHub Actions)
 
 ## Pipeline Steps
 
@@ -45,37 +45,20 @@ Verifies successful builds for:
 On Git tags matching `v*.*.*`:
 - Validates semantic version format
 - Builds binaries for all 7 platforms
-- Creates GitLab release with assets
+- Creates GitHub release with assets
 - Generates checksums
 
 ### 8. Release Notification (Tags Only)
 Sends push notification via Pincho API on successful release:
 - Uses `/send` endpoint with structured message
-- Includes release version, platform count, and link to GitLab release
+- Includes release version, platform count, and link to GitHub release
 - Dogfooding: We use our own product for CI/CD notifications
 
 ## Setup Steps
 
-### 1. Verify GitLab Token Secret
+### 1. Verify GitHub Token
 
-The GitLab Personal Access Token is already configured in Secret Manager as `gitlab-api-token-cloudbuild`. This secret is managed by Terraform in the main frontend repository and Cloud Build service account already has access.
-
-**Verify the secret exists**:
-```bash
-# Check secret exists (requires Secret Manager access)
-gcloud secrets describe gitlab-api-token-cloudbuild --project=pincho-dev
-
-# Cloud Build access is already granted via Terraform
-# See: frontend/terraform/modules/cloudbuild/main.tf
-```
-
-The cloudbuild.yaml references this secret as:
-```yaml
-availableSecrets:
-  secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/gitlab-api-token-cloudbuild/versions/latest
-      env: 'GITLAB_TOKEN'
-```
+GitHub Actions provides `GITHUB_TOKEN` automatically. No additional token configuration is needed for creating releases. The `goreleaser-action` uses `GITHUB_TOKEN` by default.
 
 ### 2. Verify Pincho Token Secret
 
@@ -138,7 +121,7 @@ git push origin v0.1.0-alpha.1
 **Expected**:
 1. Cloud Build runs all tests
 2. GoReleaser builds 7 platform binaries
-3. GitLab release created at: https://gitlab.com/pincho/pincho-cli/-/releases
+3. GitHub release created at: https://github.com/Pincho-App/pincho-cli/releases
 
 ### Cleanup Test Release
 
@@ -150,7 +133,7 @@ git tag -d v0.1.0-alpha.1
 git push origin :refs/tags/v0.1.0-alpha.1
 ```
 
-Delete GitLab release manually if needed.
+Delete GitHub release manually if needed.
 
 ## Release Process (For Maintainers)
 
@@ -170,7 +153,7 @@ git tag v1.0.0
 git push origin v1.0.0
 
 # 4. Monitor Cloud Build
-# 5. Verify GitLab release
+# 5. Verify GitHub release
 ```
 
 ## Troubleshooting
@@ -192,29 +175,9 @@ go tool cover -func=pkg_coverage.out | grep total
 go tool cover -html=coverage.out
 ```
 
-### GoReleaser Fails: Missing GITLAB_TOKEN
+### GoReleaser Fails: Missing GITHUB_TOKEN
 
-1. Verify secret exists:
-   ```bash
-   gcloud secrets describe gitlab-api-token-cloudbuild --project=pincho-dev
-   ```
-
-2. Verify Cloud Build has access (should be via Terraform):
-   ```bash
-   gcloud secrets get-iam-policy gitlab-api-token-cloudbuild --project=pincho-dev
-   ```
-
-3. Check secret reference in `cloudbuild.yaml`:
-   ```yaml
-   availableSecrets:
-     secretManager:
-       - versionName: projects/$PROJECT_ID/secrets/gitlab-api-token-cloudbuild/versions/latest
-         env: 'GITLAB_TOKEN'
-   ```
-
-### GoReleaser Fails: Token Permissions
-
-The GitLab token must have `api` scope for creating releases. The token is managed by Terraform - check the main frontend repository's terraform configuration if permissions need updating.
+The `GITHUB_TOKEN` is automatically provided by GitHub Actions. Ensure the workflow has `permissions: contents: write` set for the release job.
 
 ### Build Fails: Format Check
 
@@ -233,10 +196,10 @@ go vet ./...
 ## Architecture Diagram
 
 ```
-GitLab Push
+GitHub Push
      |
      v
-Cloud Build Trigger
+GitHub Actions Trigger
      |
      v
 ┌─────────────────────┐
@@ -272,12 +235,12 @@ Cloud Build Trigger
 └─────────────────────┘
      |
      v
-GitLab Releases
+GitHub Releases
 ```
 
 ## Security Considerations
 
-- **GitLab token**: Stored in Secret Manager, not in code
+- **GitHub token**: Provided automatically by GitHub Actions
 - **Token rotation**: Rotate annually or as needed
 - **Minimal permissions**: Token only has `api` scope
 - **No secrets in logs**: Cloud Build masks secret values
@@ -285,7 +248,7 @@ GitLab Releases
 ## Related Files
 
 - `cloudbuild.yaml` - Cloud Build configuration
-- `.goreleaser.yml` - GoReleaser configuration for multi-platform builds and GitLab releases
+- `.goreleaser.yml` - GoReleaser configuration for multi-platform builds and GitHub releases
 - `CONTRIBUTING.md` - Release process documentation
 - `CHANGELOG.md` - Version history
 
@@ -299,5 +262,5 @@ GitLab Releases
 
 - [Google Cloud Build Documentation](https://cloud.google.com/build/docs)
 - [GoReleaser Documentation](https://goreleaser.com/)
-- [GoReleaser GitLab Configuration](https://goreleaser.com/customization/release/#gitlab)
-- [GitLab Personal Access Tokens](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html)
+- [GoReleaser GitHub Configuration](https://goreleaser.com/customization/release/#github)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)

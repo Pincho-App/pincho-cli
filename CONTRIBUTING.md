@@ -10,7 +10,7 @@ Be respectful and constructive. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for
 
 ```bash
 # Get the code
-git clone https://gitlab.com/pincho/pincho-cli.git
+git clone https://github.com/Pincho-App/pincho-cli.git
 cd pincho-cli
 
 # Build and test
@@ -29,7 +29,7 @@ go vet ./...
 
 ### Report a Bug
 
-[Check existing issues](https://gitlab.com/pincho/pincho-cli/-/issues) first, then create a new one with:
+[Check existing issues](https://github.com/Pincho-App/pincho-cli/issues) first, then create a new one with:
 
 - What you did (exact command)
 - What happened vs what you expected
@@ -65,7 +65,7 @@ Create an issue explaining:
 6. **Format**: `go fmt ./... && go vet ./...`
 7. **Commit** with a clear message
 8. **Push** to your fork
-9. **Open a Merge Request**
+9. **Open a Pull Request**
 
 ## Code Guidelines
 
@@ -188,14 +188,14 @@ git push origin v1.0.0
    - Check: https://console.cloud.google.com/cloud-build/builds?project=pincho-dev
    - All steps should pass (tests, GoReleaser)
 
-2. **Verify GitLab Release**
-   - Check: https://gitlab.com/pincho/pincho-cli/-/releases
+2. **Verify GitHub Release**
+   - Check: https://github.com/Pincho-App/pincho-cli/releases
    - Should have 7 platform binaries + checksums.txt
 
 3. **Test Binary Download**
    ```bash
    # Download and verify
-   curl -LO https://gitlab.com/pincho/pincho-cli/-/releases/v1.0.0/downloads/pincho_1.0.0_darwin_arm64.tar.gz
+   curl -LO https://github.com/Pincho-App/pincho-cli/releases/download/v1.0.0/pincho_1.0.0_darwin_arm64.tar.gz
    tar -xzf pincho_1.0.0_darwin_arm64.tar.gz
    ./pincho --version
    ```
@@ -222,7 +222,7 @@ Pre-releases:
 
 - **Architecture questions?** See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **AI development?** See [CLAUDE.md](CLAUDE.md)
-- **Stuck?** Open an issue or ask in your MR
+- **Stuck?** Open an issue or ask in your PR
 
 ## License
 

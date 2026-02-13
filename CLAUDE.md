@@ -135,7 +135,7 @@ go build -o pincho
 
 With version info:
 ```bash
-go build -ldflags="-X 'gitlab.com/pincho-app/pincho-cli/cmd.version=1.0.0'" -o pincho
+go build -ldflags="-X 'github.com/Pincho-App/pincho-cli/cmd.version=1.0.0'" -o pincho
 ```
 
 ### Testing
@@ -237,8 +237,8 @@ go clean -cache          # Clear build cache
 
 ## Links
 
-- **Repository**: https://gitlab.com/pincho-app/pincho-cli
-- **Issues**: https://gitlab.com/pincho-app/pincho-cli/-/issues
+- **Repository**: https://github.com/Pincho-App/pincho-cli
+- **Issues**: https://github.com/Pincho-App/pincho-cli/issues
 - **API Docs**: https://pincho.app/help
 - **App**: https://pincho.app
 

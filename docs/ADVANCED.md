@@ -299,7 +299,7 @@ pincho config set timeout 60
 pincho config set max_retries 5
 
 # Custom API URL (for testing)
-pincho config set api_url https://staging.api.pincho.dev/send
+pincho config set api_url https://api.pincho.app/send
 ```
 
 ### Environment Variables
@@ -318,7 +318,7 @@ PINCHO_API_URL     # Custom API endpoint
 token: wpt_abc123xyz
 timeout: "60"
 max_retries: "5"
-api_url: https://api.pincho.dev/send
+api_url: https://api.pincho.app/send
 default_type: alert
 default_tags:
   - production
@@ -384,7 +384,7 @@ esac
 ### CI/CD Pipeline Example
 
 ```yaml
-# GitLab CI
+# GitHub Actions
 notify_success:
   script:
     - pincho send "Deploy Success" "Version $CI_COMMIT_TAG"
@@ -420,7 +420,7 @@ pincho send "Title" "Message" --verbose
 ```
 [VERBOSE] Verbose logging enabled
 [VERBOSE] Using token: wpt_abc1...
-[VERBOSE] Using API URL: https://api.pincho.dev/send
+[VERBOSE] Using API URL: https://api.pincho.app/send
 [VERBOSE] Using timeout: 30s
 [VERBOSE] Using max retries: 3
 [VERBOSE] Title: Deploy Complete
@@ -514,14 +514,14 @@ pincho send \
 ## Building from Source
 
 ```bash
-git clone https://gitlab.com/pincho/pincho-cli.git
+git clone https://github.com/Pincho-App/pincho-cli.git
 cd pincho-cli
 go build -o pincho
 ```
 
 With version info:
 ```bash
-go build -ldflags="-X 'gitlab.com/pincho/cli/cmd.version=1.0.0'" -o pincho
+go build -ldflags="-X 'github.com/Pincho-App/pincho-cli/cmd.version=1.0.0'" -o pincho
 ```
 
 ## Testing

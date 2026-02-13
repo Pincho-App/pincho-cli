@@ -16,9 +16,9 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X 'gitlab.com/pincho-app/pincho-cli/cmd.version={{.Version}}'
-      - -X 'gitlab.com/pincho-app/pincho-cli/cmd.commit={{.ShortCommit}}'
-      - -X 'gitlab.com/pincho-app/pincho-cli/cmd.date={{.Date}}'
+      - -X 'github.com/Pincho-App/pincho-cli/cmd.version={{.Version}}'
+      - -X 'github.com/Pincho-App/pincho-cli/cmd.commit={{.ShortCommit}}'
+      - -X 'github.com/Pincho-App/pincho-cli/cmd.date={{.Date}}'
     goos:
       - linux
       - darwin
@@ -57,17 +57,9 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
-# GitLab releases configuration
-gitlab_urls:
-  api: https://gitlab.com/api/v4/
-  download: https://gitlab.com
-  skip_tls_verify: false
-  use_package_registry: false
-  use_job_token: false
-
 release:
-  gitlab:
-    owner: pincho-app
+  github:
+    owner: Pincho-App
     name: pincho-cli
   draft: false
   prerelease: auto
@@ -84,4 +76,4 @@ release:
     ```
 
     ---
-    Full documentation: https://gitlab.com/pincho-app/pincho-cli
+    Full documentation: https://github.com/Pincho-App/pincho-cli

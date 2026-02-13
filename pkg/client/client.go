@@ -43,9 +43,9 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.com/pincho-app/pincho-cli/pkg/crypto"
-	"gitlab.com/pincho-app/pincho-cli/pkg/errors"
-	"gitlab.com/pincho-app/pincho-cli/pkg/validation"
+	"github.com/Pincho-App/pincho-cli/pkg/crypto"
+	"github.com/Pincho-App/pincho-cli/pkg/errors"
+	"github.com/Pincho-App/pincho-cli/pkg/validation"
 )
 
 const (

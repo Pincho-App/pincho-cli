@@ -1,4 +1,4 @@
-module gitlab.com/pincho-app/pincho-cli
+module github.com/Pincho-App/pincho-cli
 
 go 1.23.2
 

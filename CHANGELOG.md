@@ -91,6 +91,6 @@ default_tags:               # Optional
 
 ## Support
 
-- **Repository**: https://gitlab.com/pincho/pincho-cli
-- **Issues**: https://gitlab.com/pincho/pincho-cli/-/issues
+- **Repository**: https://github.com/Pincho-App/pincho-cli
+- **Issues**: https://github.com/Pincho-App/pincho-cli/issues
 - **Documentation**: See README.md and docs/ARCHITECTURE.md

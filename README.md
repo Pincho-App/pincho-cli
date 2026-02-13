@@ -7,10 +7,10 @@ Send push notifications from your terminal, scripts, and CI/CD pipelines.
 ## Installation
 
 ```bash
-curl -sSL https://gitlab.com/pincho-app/pincho-cli/-/raw/main/install.sh | sh
+curl -sSL https://raw.githubusercontent.com/Pincho-App/pincho-cli/main/install.sh | sh
 ```
 
-Or download from [Releases](https://gitlab.com/pincho-app/pincho-cli/-/releases).
+Or download from [Releases](https://github.com/Pincho-App/pincho-cli/releases).
 
 ## Quick Start
 
@@ -55,13 +55,13 @@ echo "Backup complete" | pincho send "Backup Status" --stdin
 ### CI/CD integration
 
 ```yaml
-# GitLab CI
+# GitHub Actions
 deploy:
-  script:
-    - ./deploy.sh
-    - pincho send "Deploy Complete" "Version ${CI_COMMIT_TAG}"
-  variables:
-    PINCHO_TOKEN: $PINCHO_TOKEN
+  steps:
+    - run: ./deploy.sh
+    - run: pincho send "Deploy Complete" "Version ${{ github.ref_name }}"
+  env:
+    PINCHO_TOKEN: ${{ secrets.PINCHO_TOKEN }}
 ```
 
 Exit codes for automation:
@@ -117,7 +117,7 @@ Automatic exponential backoff for network errors:
 - [Changelog](CHANGELOG.md) - Release history
 - [App](https://pincho.app)
 - [API Docs](https://pincho.app/help)
-- [Issues](https://gitlab.com/pincho-app/pincho-cli/-/issues)
+- [Issues](https://github.com/Pincho-App/pincho-cli/issues)
 
 ## License
 

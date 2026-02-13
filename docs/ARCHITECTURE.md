@@ -25,7 +25,7 @@ Pincho CLI is a command-line tool for sending push notifications via the Pincho 
 ## Package Structure
 
 ```
-gitlab.com/pincho/cli/
+github.com/Pincho-App/pincho-cli/
 ├── cmd/                    # Command-line interface
 │   ├── root.go            # Root command and global flags
 │   ├── send.go            # Send command implementation
@@ -117,7 +117,7 @@ Use default value or return error
 | Parameter | Flag | Environment Variable | Config Key | Default |
 |-----------|------|---------------------|------------|---------|
 | API Token | `--token, -t` | `PINCHO_TOKEN` | `token` | *required* |
-| API URL | (none) | `PINCHO_API_URL` | `api_url` | `https://api.pincho.dev/send` |
+| API URL | (none) | `PINCHO_API_URL` | `api_url` | `https://api.pincho.app/send` |
 | Timeout | `--timeout` | `PINCHO_TIMEOUT` | `timeout` | `30` seconds |
 | Max Retries | `--max-retries` | `PINCHO_MAX_RETRIES` | `max_retries` | `3` |
 | Default Type | `--type` (send only) | (none) | `default_type` | (empty) |
@@ -486,5 +486,5 @@ When adding new features, consider:
 
 - [Cobra CLI Framework](https://github.com/spf13/cobra)
 - [Viper Configuration](https://github.com/spf13/viper)
-- [Pincho API Documentation](https://pincho.com/docs)
+- [Pincho API Documentation](https://pincho.app/help)
 - [Go CLI Best Practices](https://github.com/cli/cli/blob/trunk/docs/project-layout.md)

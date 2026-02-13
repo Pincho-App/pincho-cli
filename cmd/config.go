@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/pincho-app/pincho-cli/pkg/config"
+	"github.com/Pincho-App/pincho-cli/pkg/config"
 )
 
 // configCmd represents the config command

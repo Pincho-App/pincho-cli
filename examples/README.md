@@ -42,14 +42,14 @@ CI/CD pipeline integration showing:
 - Using CI environment variables
 - Adding action URLs to link back to pipeline
 
-Use in GitLab CI:
+Use in GitHub Actions:
 ```yaml
 deploy:
-  script:
-    - ./examples/ci-cd.sh
-  variables:
-    PINCHO_TOKEN: $PINCHO_TOKEN
-    ```
+  steps:
+    - run: ./examples/ci-cd.sh
+  env:
+    PINCHO_TOKEN: ${{ secrets.PINCHO_TOKEN }}
+```
 
 ### [log-monitoring.sh](log-monitoring.sh)
 Log file monitoring showing:
@@ -172,4 +172,4 @@ pincho send "Test" "Testing Pincho CLI"
 
 - Full CLI documentation: [../README.md](../README.md)
 - Pincho website: https://pincho.com
-- GitLab repository: https://gitlab.com/pincho/cli
+- GitHub repository: https://github.com/Pincho-App/pincho-cli

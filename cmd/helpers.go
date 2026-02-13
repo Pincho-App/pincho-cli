@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/pincho-app/pincho-cli/pkg/client"
+	"github.com/Pincho-App/pincho-cli/pkg/client"
 )
 
 // getTokenOptional retrieves the token from flags, env vars, or config (in that order)

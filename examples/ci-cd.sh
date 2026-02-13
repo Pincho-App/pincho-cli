@@ -14,10 +14,10 @@ if [ $? -eq 0 ]; then
   pincho send "Build Passed" "Pipeline #$CI_PIPELINE_ID completed successfully" \
     --type success \
     --tag ci \
-    --action-url "https://gitlab.com/your-project/-/pipelines/$CI_PIPELINE_ID"
+    --action-url "https://github.com/your-project/actions/runs/$CI_PIPELINE_ID"
 else
   pincho send "Build Failed" "Pipeline #$CI_PIPELINE_ID failed" \
     --type alert \
     --tag ci \
-    --action-url "https://gitlab.com/your-project/-/pipelines/$CI_PIPELINE_ID"
+    --action-url "https://github.com/your-project/actions/runs/$CI_PIPELINE_ID"
 fi

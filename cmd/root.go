@@ -30,9 +30,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/pincho-app/pincho-cli/pkg/config"
-	clierrors "gitlab.com/pincho-app/pincho-cli/pkg/errors"
-	"gitlab.com/pincho-app/pincho-cli/pkg/logging"
+	"github.com/Pincho-App/pincho-cli/pkg/config"
+	clierrors "github.com/Pincho-App/pincho-cli/pkg/errors"
+	"github.com/Pincho-App/pincho-cli/pkg/logging"
 )
 
 var (
@@ -53,7 +53,7 @@ var rootCmd = &cobra.Command{
 via the Pincho API. Perfect for CI/CD pipelines, monitoring scripts,
 and automation workflows.
 
-Documentation: https://gitlab.com/pincho-app/pincho-cli
+Documentation: https://github.com/Pincho-App/pincho-cli
 API Reference: https://pincho.app/help`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Enable verbose logging if flag is set
