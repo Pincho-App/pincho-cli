@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/spf13/cobra"
 	"github.com/Pincho-App/pincho-cli/pkg/config"
+	"github.com/spf13/cobra"
 )
 
 // configCmd represents the config command

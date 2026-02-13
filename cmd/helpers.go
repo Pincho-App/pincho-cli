@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Pincho-App/pincho-cli/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/Pincho-App/pincho-cli/pkg/client"
 )
 
 // getTokenOptional retrieves the token from flags, env vars, or config (in that order)

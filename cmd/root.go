@@ -29,10 +29,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
 	"github.com/Pincho-App/pincho-cli/pkg/config"
 	clierrors "github.com/Pincho-App/pincho-cli/pkg/errors"
 	"github.com/Pincho-App/pincho-cli/pkg/logging"
+	"github.com/spf13/cobra"
 )
 
 var (
