@@ -40,9 +40,6 @@ var (
 	version = "dev"
 	commit  = "none"
 	date    = "unknown"
-
-	// verbose enables detailed logging
-	verbose bool
 )
 
 // rootCmd represents the base command when called without any subcommands

@@ -58,7 +58,7 @@ func TestClient_Send_Success(t *testing.T) {
 
 		// Send success response
 		w.WriteHeader(200)
-		w.Write([]byte(`{"status": "success", "message": "Notification sent"}`))
+		_, _ = w.Write([]byte(`{"status": "success", "message": "Notification sent"}`))
 	}))
 	defer server.Close()
 
@@ -78,10 +78,10 @@ func TestClient_Send_Success(t *testing.T) {
 		t.Errorf("expected no error, got: %v", err)
 	}
 	if result == nil {
-		t.Error("expected result, got nil")
+		t.Fatal("expected result, got nil")
 	}
 	if result.Response == nil {
-		t.Error("expected response, got nil")
+		t.Fatal("expected response, got nil")
 	}
 }
 
@@ -89,7 +89,7 @@ func TestClient_Send_WithAllOptions(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		w.Write([]byte(`{"status": "success"}`))
+		_, _ = w.Write([]byte(`{"status": "success"}`))
 	}))
 	defer server.Close()
 
@@ -232,7 +232,7 @@ func TestClient_Send_HTTPErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.statusCode)
-				w.Write([]byte(tt.response))
+				_, _ = w.Write([]byte(tt.response))
 			}))
 			defer server.Close()
 
