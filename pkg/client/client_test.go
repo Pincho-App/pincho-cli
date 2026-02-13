@@ -272,7 +272,7 @@ func TestClient_Send_WithEncryption(t *testing.T) {
 		receivedBody = string(buf[:n])
 
 		w.WriteHeader(200)
-		w.Write([]byte(`{"status": "success"}`))
+		_, _ = w.Write([]byte(`{"status": "success"}`))
 	}))
 	defer server.Close()
 
